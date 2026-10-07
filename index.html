@@ -1,108 +1,223 @@
 <!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TOFD – Extraction automatique des extrémités de défaut</title>
 <meta name="description" content="Pipeline Python qui débruite un B-scan TOFD, détecte les extrémités haute et basse d'un défaut et en déduit sa hauteur.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<meta name="theme-color" content="#0B141C">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230B141C%27/%3E%3Crect x=%2714%27 y=%277%27 width=%274%27 height=%2718%27 rx=%272%27 fill=%27%23C8A96B%27/%3E%3C/svg%3E">
-<link rel="stylesheet" href="style.css">
-</head>
+<meta name="theme-color" content="#4F46E5">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>:root{--brand:#4F46E5;--brand2:#06B6D4;--ink:#0F172A;--muted:#5B6478;--bg:#F5F7FF;--line:#E3E8F5;--top:#12A150;--bot:#D1229B}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:90px}
+body{margin:0;font:500 1.05rem/1.7 "Plus Jakarta Sans",system-ui,sans-serif;color:var(--ink);background:var(--bg)}
+h1,h2,h3{font-weight:800;letter-spacing:-.03em;line-height:1.1;margin:0 0 .5em}
+h1{font-size:clamp(2.4rem,6vw,4.4rem);max-width:18ch;margin-inline:auto}
+h2{font-size:clamp(1.9rem,4vw,2.8rem)}h3{font-size:1.2rem;letter-spacing:-.01em}
+p{margin:0 0 1em;color:var(--muted)}a{color:inherit}
+:focus-visible{outline:3px solid var(--brand2);outline-offset:3px}
+.wrap{width:min(1100px,100% - 40px);margin-inline:auto}
+.nav{position:fixed;top:16px;left:50%;transform:translateX(-50%);width:min(1100px,100% - 32px);z-index:10;display:flex;align-items:center;justify-content:space-between;padding:10px 10px 10px 26px;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);border-radius:999px;box-shadow:0 10px 40px -12px rgba(15,23,42,.25)}
+.logo{font-weight:800;font-size:1.25rem;text-decoration:none;letter-spacing:.04em}
+.nav nav{display:flex;align-items:center;gap:26px;font-size:.95rem;font-weight:600}
+.nav nav a{text-decoration:none;color:var(--muted)}.nav nav a:hover{color:var(--ink)}
+.btn{display:inline-block;background:linear-gradient(135deg,var(--brand),#7C3AED);color:#fff!important;padding:.8em 1.6em;border-radius:999px;font-weight:700;text-decoration:none;box-shadow:0 8px 24px -8px rgba(79,70,229,.7);transition:transform .2s,box-shadow .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 14px 30px -8px rgba(79,70,229,.8)}
+.btn.light{background:#fff;color:var(--brand)!important;box-shadow:0 8px 24px -8px rgba(0,0,0,.3)}
+.btn.ghost{background:rgba(255,255,255,.16);box-shadow:none;border:1px solid rgba(255,255,255,.4)}
+.hero{position:relative;overflow:hidden;text-align:center;color:#fff;padding:170px 0 210px;border-radius:0 0 56px 56px;background:linear-gradient(135deg,#1E1B6B 0%,#4F46E5 50%,#06B6D4 130%)}
+.hero::before,.hero::after{content:"";position:absolute;border-radius:50%;filter:blur(60px);opacity:.5}
+.hero::before{width:420px;height:420px;background:#A78BFA;left:-120px;top:40px}
+.hero::after{width:380px;height:380px;background:#22D3EE;right:-100px;bottom:-60px}
+.hero .wrap{position:relative;z-index:1}
+.badge{display:inline-block;padding:.4em 1.1em;border-radius:999px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);font-size:.9rem;font-weight:600;margin-bottom:26px}
+.hero p{color:rgba(255,255,255,.88);font-size:1.25rem;max-width:56ch;margin:22px auto 34px}
+.hero .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.demo{position:relative;z-index:2;margin:-130px auto 0;background:#fff;border-radius:28px;padding:22px;box-shadow:0 40px 90px -30px rgba(30,27,107,.55)}
+.demo-grid{display:grid;grid-template-columns:1fr 230px;gap:14px}
+canvas{width:100%;height:auto;display:block;border-radius:16px;background:#0A0F1E}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px 30px;margin-top:20px;align-items:center}
+.controls label{font-weight:600}output{color:var(--brand);font-weight:800}
+input[type=range]{width:100%;accent-color:var(--brand)}
+.readout{grid-column:1/-1;display:flex;gap:16px;margin:4px 0 0;flex-wrap:wrap}
+.readout div{flex:1;min-width:130px;background:var(--bg);border-radius:16px;padding:12px 18px}
+dt{font-size:.85rem;color:var(--muted);display:flex;align-items:center;gap:8px;font-weight:600}
+dd{margin:0;font-weight:800;font-size:1.7rem;letter-spacing:-.02em}
+.sw{width:18px;height:4px;border-radius:2px;display:inline-block}.sw.top{background:var(--top)}.sw.bot{background:var(--bot)}
+figcaption{font-size:.88rem;color:var(--muted);margin:14px 4px 0}
+section{padding:104px 0}
+.center{text-align:center}.center p{margin-inline:auto;max-width:56ch}
+.grid{display:grid;gap:20px;margin-top:48px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.card{background:#fff;border:1px solid var(--line);border-radius:24px;padding:30px;transition:transform .25s,box-shadow .25s}
+.card:hover{transform:translateY(-6px);box-shadow:0 24px 50px -20px rgba(79,70,229,.35)}
+.card p{margin:0}
+.ico{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:1.5rem;color:#fff;font-weight:800;margin-bottom:18px;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+.steps{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}.steps .card{padding:26px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+.pane{background:#fff;border-radius:28px;padding:24px;border:1px solid var(--line)}
+svg{width:100%;height:auto}svg text{font:12px "Plus Jakarta Sans",sans-serif;fill:var(--ink);font-weight:600}
+.plate{fill:var(--bg);stroke:var(--line)}.probe{fill:var(--brand)}.crack{stroke:var(--ink);stroke-width:5;stroke-linecap:round}
+.ray{fill:none;stroke-width:2}.ray.top{stroke:var(--top)}.ray.bot{stroke:var(--bot)}.ray.lat,.ray.back{stroke:#9AA3B8;stroke-dasharray:4 4}
+svg .t-top{fill:var(--top)}svg .t-bot{fill:var(--bot)}svg .t-mut{fill:var(--muted)}
+.limits{background:#FFF8E6;border:1px solid #F5DFA3;border-radius:28px;padding:44px}
+.final{background:linear-gradient(135deg,#1E1B6B,#4F46E5 60%,#06B6D4 130%);color:#fff;text-align:center;border-radius:40px;padding:80px 28px}
+.final p{color:rgba(255,255,255,.85);margin:0 auto 30px;max-width:50ch}
+footer{padding:34px 0 50px;color:var(--muted);font-size:.9rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.js .rv{opacity:0;transform:translateY(26px);transition:opacity .8s,transform .8s}.js .rv.in{opacity:1;transform:none}
+@media(max-width:820px){.split,.demo-grid,.controls{grid-template-columns:1fr}.nav nav a:not(.btn){display:none}.hero{padding:140px 0 190px;border-radius:0 0 36px 36px}section{padding:72px 0}.limits{padding:28px}}
+@media(prefers-reduced-motion:reduce){.js .rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}.card,.btn{transition:none}}
+</style>
+<script>document.documentElement.classList.add('js')</script></head>
 <body>
-<header class="top">
-  <div class="wrap bar">
-    <a class="brand" href="#">TOFD</a>
-    <nav aria-label="Navigation principale">
-      <a href="#principe">Principe</a>
-      <a href="#methode">Méthode</a>
-      <a href="#limites">Limites</a>
-      <a class="btn" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Ouvrir l'application</a>
-    </nav>
-  </div>
-</header>
-
+<div class="nav"><a class="logo" href="#">TOFD</a><nav aria-label="Navigation"><a href="#methode">Méthode</a><a href="#principe">Principe</a><a href="#app">Application</a><a href="#limites">Limites</a><a class="btn" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Ouvrir l'app</a></nav></div>
+<header class="hero"><div class="wrap">
+<span class="badge">Projet STG2 · Contrôle non destructif</span>
+<h1>Trouvez les extrémités d'un défaut TOFD automatiquement</h1>
+<p>Un pipeline Python débruite votre B-scan, détecte les échos de diffraction haut et bas, puis vérifie chaque résultat sur le signal brut.</p>
+<div class="cta"><a class="btn light" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Essayer l'application</a><a class="btn ghost" href="#methode">Voir la méthode</a></div>
+</div></header>
 <main>
-<section class="hero wrap">
-  <div class="hero-text">
-    <h1>Retrouver les deux extrémités d'un défaut sur un B-scan TOFD</h1>
-    <p class="lead">Un pipeline Python débruite le B-scan, repère les échos de diffraction des extrémités haute et basse du défaut, puis vérifie chaque résultat sur le signal brut.</p>
-  </div>
-  <figure class="demo" aria-label="Démonstration interactive sur un B-scan simulé">
-    <div class="demo-grid">
-      <canvas id="bscan" width="720" height="440" role="img" aria-label="B-scan simulé avec les deux extrémités du défaut"></canvas>
-      <canvas id="ascan" width="220" height="440" role="img" aria-label="A-scan à la position choisie"></canvas>
-    </div>
-    <div class="controls">
-      <label for="pos">Position de la sonde (A-scan <output id="posOut">180</output>)</label>
-      <input id="pos" type="range" min="0" max="359" value="180">
-      <dl class="readout">
-        <div><dt><i class="sw top"></i>Tip haut</dt><dd id="rTop">—</dd></div>
-        <div><dt><i class="sw bot"></i>Tip bas</dt><dd id="rBot">—</dd></div>
-        <div><dt>Écart</dt><dd id="rGap">—</dd></div>
-      </dl>
-    </div>
-    <figcaption>Simulation illustrative (tips générés à 380 et 490 échantillons, comme le mode démo de l'application). Déplace la sonde : loin du défaut, les échos sont noyés et rien n'est détecté.</figcaption>
-  </figure>
-</section>
+<div class="wrap"><figure class="demo" style="margin-bottom:0">
+<div class="demo-grid"><canvas id="bscan" width="720" height="440" role="img" aria-label="B-scan simulé avec les deux extrémités du défaut"></canvas><canvas id="ascan" width="220" height="440" role="img" aria-label="A-scan à la position choisie"></canvas></div>
+<div class="controls"><label for="pos">Déplacez la sonde : A-scan <output id="posOut">180</output></label><input id="pos" type="range" min="0" max="359" value="180">
+<dl class="readout"><div><dt><i class="sw top"></i>Tip haut</dt><dd id="rTop">—</dd></div><div><dt><i class="sw bot"></i>Tip bas</dt><dd id="rBot">—</dd></div><div><dt>Écart</dt><dd id="rGap">—</dd></div></dl></div>
+<figcaption>Simulation illustrative (tips générés à 380 et 490 échantillons). Loin du défaut, les échos sont noyés et rien n'est détecté.</figcaption>
+</figure></div>
 
-<section id="principe" class="wrap split">
-  <div>
-    <h2>Le principe de la TOFD</h2>
-    <p>Deux sondes ultrasonores sont placées de part et d'autre d'une soudure. L'une émet, l'autre reçoit. Une onde passe près de la surface, une autre se réfléchit sur le fond de la pièce.</p>
-    <p>Quand un défaut est présent, ses deux extrémités diffractent l'onde et renvoient chacune un écho entre ces deux repères. Le temps d'arrivée de ces échos donne la profondeur de chaque extrémité, donc la hauteur du défaut.</p>
-    <p>La difficulté : ces échos sont faibles, bruités, et parfois si proches qu'ils se confondent.</p>
-  </div>
-  <svg viewBox="0 0 360 220" role="img" aria-label="Schéma : sonde émettrice, sonde réceptrice et défaut entre les deux">
-    <rect x="20" y="50" width="320" height="140" class="plate"/>
-    <rect x="70" y="30" width="34" height="20" class="probe"/><text x="87" y="22" text-anchor="middle">émetteur</text>
-    <rect x="256" y="30" width="34" height="20" class="probe"/><text x="273" y="22" text-anchor="middle">récepteur</text>
-    <line x1="180" y1="92" x2="180" y2="146" class="crack"/>
-    <path d="M87 50 L180 92 L273 50" class="ray top"/>
-    <path d="M87 50 L180 146 L273 50" class="ray bot"/>
-    <path d="M87 50 L273 50" class="ray lat"/>
-    <path d="M87 50 L180 190 L273 50" class="ray back"/>
-    <text x="190" y="90" class="t-top">extrémité haute</text>
-    <text x="190" y="152" class="t-bot">extrémité basse</text>
-    <text x="180" y="66" text-anchor="middle" class="t-mut">onde latérale</text>
-    <text x="180" y="208" text-anchor="middle" class="t-mut">écho de fond</text>
-  </svg>
-</section>
+<section id="methode"><div class="wrap center rv"><h2>5 étapes, du signal bruité au tip fiable</h2><p>Chaque étape corrige une faiblesse de la précédente.</p></div>
+<div class="wrap"><div class="grid steps">
+<div class="card rv"><div class="ico">1</div><h3>Regrouper</h3><p>Un k-means rassemble les A-scans qui se ressemblent.</p></div>
+<div class="card rv"><div class="ico">2</div><h3>Débruiter</h3><p>Un autoencodeur par groupe, entraîné sur des mini-lots de 5 A-scans.</p></div>
+<div class="card rv"><div class="ico">3</div><h3>Enveloppe</h3><p>L'enveloppe de Hilbert révèle les pics qui ressortent assez.</p></div>
+<div class="card rv"><div class="ico">4</div><h3>Séparer</h3><p>Un second pic est cherché près du principal, avec des garde-fous réalistes.</p></div>
+<div class="card rv"><div class="ico">5</div><h3>Vérifier</h3><p>Chaque tip est comparé au signal brut, et remplacé si l'écart est trop grand.</p></div>
+</div></div></section>
 
-<section id="methode" class="wrap">
-  <h2>La méthode, étape par étape</h2>
-  <ol class="steps">
-    <li><h3>Regrouper</h3><p>Un k-means rassemble les A-scans qui se ressemblent en clusters.</p></li>
-    <li><h3>Débruiter</h3><p>Un autoencodeur est entraîné par cluster, sur des mini-lots de 5 A-scans.</p></li>
-    <li><h3>Mesurer l'enveloppe</h3><p>L'enveloppe de Hilbert du signal débruité révèle les pics, retenus s'ils ressortent assez (prominence minimale).</p></li>
-    <li><h3>Séparer les extrémités proches</h3><p>Un second pic est cherché près du principal, selon la largeur à mi-hauteur, une amplitude relative minimale et une séparation maximale réaliste.</p></li>
-    <li><h3>Vérifier sur le signal brut</h3><p>Chaque tip est comparé au centre du paquet d'échos sur le B-scan non traité. Au-delà de la tolérance, il est remplacé.</p></li>
-  </ol>
-  <p class="note">En option, avec la vitesse du son et le demi-écartement des sondes, l'application calcule la hauteur du défaut en millimètres.</p>
-</section>
+<section id="principe" style="padding-top:0"><div class="wrap split">
+<div class="rv"><h2>Le principe de la TOFD</h2><p>Deux sondes ultrasonores sont placées de part et d'autre d'une soudure : l'une émet, l'autre reçoit.</p><p>Les deux extrémités d'un défaut diffractent l'onde et renvoient chacune un écho, entre l'onde latérale et l'écho de fond. Leur temps d'arrivée donne la profondeur de chaque extrémité, donc la hauteur du défaut.</p></div>
+<div class="pane rv"><svg viewBox="0 0 360 220" role="img" aria-label="Schéma : sonde émettrice, sonde réceptrice et défaut">
+<rect x="20" y="50" width="320" height="140" rx="10" class="plate"/><rect x="70" y="30" width="34" height="20" rx="4" class="probe"/><text x="87" y="22" text-anchor="middle">émetteur</text><rect x="256" y="30" width="34" height="20" rx="4" class="probe"/><text x="273" y="22" text-anchor="middle">récepteur</text>
+<line x1="180" y1="92" x2="180" y2="146" class="crack"/><path d="M87 50 L180 92 L273 50" class="ray top"/><path d="M87 50 L180 146 L273 50" class="ray bot"/><path d="M87 50 L273 50" class="ray lat"/><path d="M87 50 L180 190 L273 50" class="ray back"/>
+<text x="190" y="90" class="t-top">extrémité haute</text><text x="190" y="152" class="t-bot">extrémité basse</text><text x="180" y="66" text-anchor="middle" class="t-mut">onde latérale</text><text x="180" y="208" text-anchor="middle" class="t-mut">écho de fond</text></svg></div>
+</div></section>
 
-<section id="limites" class="wrap split">
-  <div>
-    <h2>Ce que l'outil ne prétend pas faire</h2>
-    <p>Quand les deux extrémités sont très proches, leurs échos fusionnent dans l'enveloppe. L'outil l'indique (« tips fusionnés ») plutôt que d'inventer un second pic. Un repli de détection existe, mais il demande un contrôle visuel.</p>
-    <p>Piste envisagée : une déconvolution parcimonieuse (matching pursuit) pour séparer des échos qui se recouvrent.</p>
-  </div>
-  <div>
-    <h2>Essayer</h2>
-    <p>L'application Streamlit permet de régler chaque paramètre et de télécharger la figure de détection. Sans fichier, elle utilise un B-scan simulé.</p>
-    <p><a class="btn" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Ouvrir l'application</a>
-       <a class="link" href="https://github.com/cachaualix/site_tofd" target="_blank" rel="noreferrer">Code source sur GitHub</a></p>
-  </div>
-</section>
+<section id="app" style="background:#fff"><div class="wrap center rv"><h2>Ce que fait l'application</h2><p>Une interface Streamlit pour tester vos propres B-scans.</p></div>
+<div class="wrap"><div class="grid">
+<div class="card rv"><div class="ico">🎛️</div><h3>Tous les réglages</h3><p>Clusters, itérations, prominence, séparation, tolérance : chaque paramètre est ajustable.</p></div>
+<div class="card rv"><div class="ico">📈</div><h3>Tips haut et bas</h3><p>Position de l'A-scan retenu et des deux extrémités, avec un avertissement si elles fusionnent.</p></div>
+<div class="card rv"><div class="ico">✅</div><h3>Vérification sur le brut</h3><p>Un tip trop éloigné du centre du paquet d'échos est corrigé automatiquement.</p></div>
+<div class="card rv"><div class="ico">📐</div><h3>Hauteur du défaut</h3><p>En option, avec la vitesse du son et le demi-écartement des sondes.</p></div>
+<div class="card rv"><div class="ico">🖼️</div><h3>Export de la figure</h3><p>Téléchargez le résultat de détection en PNG.</p></div>
+<div class="card rv"><div class="ico">📂</div><h3>Vos propres données</h3><p>Importez une image de B-scan, ou lancez la démo simulée.</p></div>
+</div></div></section>
+
+<section id="limites"><div class="wrap"><div class="limits rv"><h2>Ce que l'outil ne prétend pas faire</h2>
+<p style="color:#6B5B1E;max-width:70ch">Quand les deux extrémités sont très proches, leurs échos fusionnent dans l'enveloppe. L'outil l'indique (« tips fusionnés ») au lieu d'inventer un second pic, et le repli de détection demande un contrôle visuel.</p>
+<p style="color:#6B5B1E;max-width:70ch;margin:0">Piste envisagée : une déconvolution parcimonieuse (matching pursuit) pour séparer des échos qui se recouvrent.</p></div></div></section>
+
+<section style="padding-top:0"><div class="wrap"><div class="final rv"><h2>Testez-le sur un B-scan</h2><p>Sans fichier, l'application utilise un B-scan simulé pour vous laisser explorer.</p><a class="btn light" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Ouvrir l'application</a></div></div></section>
 </main>
+<footer class="wrap"><span>Projet STG2 · <span id="year"></span> · Python, PyTorch, scikit-learn, SciPy, Streamlit</span><a href="https://github.com/cachaualix" target="_blank" rel="noreferrer">github.com/cachaualix</a></footer>
 
-<footer class="wrap foot">
-  <p>Projet STG2 · <span id="year"></span> · Python, PyTorch, scikit-learn, SciPy, Streamlit</p>
-  <p><a class="link" href="https://github.com/cachaualix" target="_blank" rel="noreferrer">github.com/cachaualix</a></p>
-</footer>
-<script src="script.js"></script>
-</body>
-</html>
+<script>(() => {
+  const W = 360, H = 600, T1 = 380, T2 = 490, XC = 180;
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-9)) * Math.cos(2 * Math.PI * rnd());
+  const wav = t => Math.cos(2 * Math.PI * t / 14) * Math.exp(-((t / 9) ** 2));
+
+  // Données simulées : colonne = A-scan, ligne = échantillon de profondeur
+  const data = Array.from({ length: W }, (_, x) => {
+    const a = new Float32Array(H);
+    for (let j = 0; j < H; j++) a[j] = 0.12 * gauss();
+    const amp = Math.exp(-(((x - XC) / 70) ** 2));
+    const add = (t0, A) => {
+      const ti = Math.sqrt(t0 * t0 + (0.9 * (x - XC)) ** 2);
+      for (let j = Math.max(0, Math.floor(ti - 30)); j < Math.min(H, ti + 30); j++) a[j] += A * amp * wav(j - ti);
+    };
+    add(T1, 0.9); add(T2, -0.8);
+    for (let j = 0; j < H; j++) {
+      a[j] += 1.0 * wav(j - 140) + 1.1 * wav(j - 560);
+    }
+    return a;
+  });
+
+  const envelope = a => {
+    const e = new Float32Array(H), k = 4;
+    for (let j = 0; j < H; j++) {
+      let s = 0, n = 0;
+      for (let i = Math.max(0, j - k); i <= Math.min(H - 1, j + k); i++) { s += Math.abs(a[i]); n++; }
+      e[j] = s / n;
+    }
+    return e;
+  };
+
+  // Détection : plus grand pic, puis second pic à au moins 25 échantillons, entre onde latérale et fond
+  const detect = x => {
+    const e = envelope(data[x]), lo = 175, hi = 530, thr = 0.28;
+    let p1 = -1;
+    for (let j = lo; j < hi; j++) if (e[j] > thr && (p1 < 0 || e[j] > e[p1])) p1 = j;
+    if (p1 < 0) return { env: e };
+    let p2 = -1;
+    for (let j = lo; j < hi; j++) if (Math.abs(j - p1) >= 25 && e[j] > thr && (p2 < 0 || e[j] > e[p2])) p2 = j;
+    if (p2 < 0) return { env: e };
+    return { env: e, top: Math.min(p1, p2), bot: Math.max(p1, p2) };
+  };
+
+  const bs = document.getElementById("bscan"), as = document.getElementById("ascan");
+  const bc = bs.getContext("2d"), ac = as.getContext("2d");
+  const off = document.createElement("canvas"); off.width = W; off.height = H;
+  const img = off.getContext("2d").createImageData(W, H);
+  for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) {
+    const v = 128 + 110 * Math.tanh(data[x][y] * 1.4), i = 4 * (y * W + x);
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
+  }
+  off.getContext("2d").putImageData(img, 0, 0);
+
+  const pos = document.getElementById("pos"), out = document.getElementById("posOut");
+  const rT = document.getElementById("rTop"), rB = document.getElementById("rBot"), rG = document.getElementById("rGap");
+  const GREEN = "#3ddc84", MAG = "#ff4fd8";
+
+  const draw = () => {
+    const x = +pos.value, d = detect(x), sx = bs.width / W, sy = bs.height / H;
+    out.textContent = x;
+    bc.drawImage(off, 0, 0, bs.width, bs.height);
+    bc.strokeStyle = "#ffb454"; bc.setLineDash([3, 4]); bc.lineWidth = 1;
+    bc.beginPath(); bc.moveTo(x * sx, 0); bc.lineTo(x * sx, bs.height); bc.stroke();
+    bc.setLineDash([6, 4]); bc.lineWidth = 1.6;
+    if (d.top !== undefined) {
+      bc.strokeStyle = GREEN; bc.beginPath(); bc.moveTo(0, d.top * sy); bc.lineTo(bs.width, d.top * sy); bc.stroke();
+      bc.strokeStyle = MAG; bc.beginPath(); bc.moveTo(0, d.bot * sy); bc.lineTo(bs.width, d.bot * sy); bc.stroke();
+    }
+    bc.setLineDash([]); bc.fillStyle = "#fff"; bc.font = "12px 'Public Sans',sans-serif";
+    bc.fillText("Position de la sonde →", 8, bs.height - 8);
+    bc.save(); bc.translate(14, 130); bc.rotate(-Math.PI / 2); bc.restore();
+
+    // A-scan : profondeur en vertical, amplitude en horizontal
+    ac.fillStyle = "#111"; ac.fillRect(0, 0, as.width, as.height);
+    const cx = as.width / 2, k = as.height / H;
+    ac.strokeStyle = "#666"; ac.lineWidth = 1; ac.beginPath(); ac.moveTo(cx, 0); ac.lineTo(cx, as.height); ac.stroke();
+    ac.strokeStyle = "#d8e0e6"; ac.beginPath();
+    for (let j = 0; j < H; j++) { const px = cx + data[x][j] * 40; j ? ac.lineTo(px, j * k) : ac.moveTo(px, 0); }
+    ac.stroke();
+    ac.strokeStyle = "#ffb454"; ac.beginPath();
+    for (let j = 0; j < H; j++) { const px = cx + d.env[j] * 80; j ? ac.lineTo(px, j * k) : ac.moveTo(px, 0); }
+    ac.stroke();
+    if (d.top !== undefined) {
+      [[d.top, GREEN], [d.bot, MAG]].forEach(([t, c]) => {
+        ac.strokeStyle = c; ac.setLineDash([6, 4]); ac.lineWidth = 1.6;
+        ac.beginPath(); ac.moveTo(0, t * k); ac.lineTo(as.width, t * k); ac.stroke();
+      });
+      ac.setLineDash([]);
+    }
+    ac.fillStyle = "#fff"; ac.font = "12px 'Public Sans',sans-serif";
+    ac.fillText("A-scan et enveloppe", 8, 16);
+
+    if (d.top === undefined) { rT.textContent = rB.textContent = rG.textContent = "non détecté"; }
+    else { rT.textContent = d.top; rB.textContent = d.bot; rG.textContent = d.bot - d.top + " éch."; }
+  };
+
+  pos.addEventListener("input", draw);
+  draw();
+  document.getElementById("year").textContent = new Date().getFullYear();
+})();
+</script>
+<script>const io=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}}),{threshold:.15});document.querySelectorAll('.rv').forEach(el=>io.observe(el));</script>
+</body></html>
