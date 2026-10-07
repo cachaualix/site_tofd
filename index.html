@@ -1,303 +1,107 @@
 <!DOCTYPE html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="TOFD — solution moderne pour analyser, visualiser et exploiter vos données."
-    />
-    <title>TOFD | Solution intelligente</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="style.css" />
-  </head>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TOFD – Extraction automatique des extrémités de défaut</title>
+<meta name="description" content="Pipeline Python qui débruite un B-scan TOFD, détecte les extrémités haute et basse d'un défaut et en déduit sa hauteur.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap bar">
+    <a class="brand" href="#">TOFD</a>
+    <nav aria-label="Navigation principale">
+      <a href="#principe">Principe</a>
+      <a href="#methode">Méthode</a>
+      <a href="#limites">Limites</a>
+      <a class="btn" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Ouvrir l'application</a>
+    </nav>
+  </div>
+</header>
 
-  <body>
-    <header class="header">
-      <div class="container nav">
-        <div class="brand">
-          <span class="brand-mark">T</span>
-          <span>TOFD</span>
-        </div>
+<main>
+<section class="hero wrap">
+  <div class="hero-text">
+    <h1>Retrouver les deux extrémités d'un défaut sur un B-scan TOFD</h1>
+    <p class="lead">Un pipeline Python débruite le B-scan, repère les échos de diffraction des extrémités haute et basse du défaut, puis vérifie chaque résultat sur le signal brut.</p>
+  </div>
+  <figure class="demo" aria-label="Démonstration interactive sur un B-scan simulé">
+    <div class="demo-grid">
+      <canvas id="bscan" width="720" height="440" role="img" aria-label="B-scan simulé avec les deux extrémités du défaut"></canvas>
+      <canvas id="ascan" width="220" height="440" role="img" aria-label="A-scan à la position choisie"></canvas>
+    </div>
+    <div class="controls">
+      <label for="pos">Position de la sonde (A-scan <output id="posOut">180</output>)</label>
+      <input id="pos" type="range" min="0" max="359" value="180">
+      <dl class="readout">
+        <div><dt><i class="sw top"></i>Tip haut</dt><dd id="rTop">—</dd></div>
+        <div><dt><i class="sw bot"></i>Tip bas</dt><dd id="rBot">—</dd></div>
+        <div><dt>Écart</dt><dd id="rGap">—</dd></div>
+      </dl>
+    </div>
+    <figcaption>Simulation illustrative (tips générés à 380 et 490 échantillons, comme le mode démo de l'application). Déplace la sonde : loin du défaut, les échos sont noyés et rien n'est détecté.</figcaption>
+  </figure>
+</section>
 
-        <nav class="menu">
-          <a href="#apropos">À propos</a>
-          <a href="#fonctionnalites">Fonctionnalités</a>
-          <a href="#avantages">Avantages</a>
-          <a href="#stack">Stack</a>
-          <a href="#contact">Contact</a>
-        </nav>
+<section id="principe" class="wrap split">
+  <div>
+    <h2>Le principe de la TOFD</h2>
+    <p>Deux sondes ultrasonores sont placées de part et d'autre d'une soudure. L'une émet, l'autre reçoit. Une onde passe près de la surface, une autre se réfléchit sur le fond de la pièce.</p>
+    <p>Quand un défaut est présent, ses deux extrémités diffractent l'onde et renvoient chacune un écho entre ces deux repères. Le temps d'arrivée de ces échos donne la profondeur de chaque extrémité, donc la hauteur du défaut.</p>
+    <p>La difficulté : ces échos sont faibles, bruités, et parfois si proches qu'ils se confondent.</p>
+  </div>
+  <svg viewBox="0 0 360 220" role="img" aria-label="Schéma : sonde émettrice, sonde réceptrice et défaut entre les deux">
+    <rect x="20" y="50" width="320" height="140" class="plate"/>
+    <rect x="70" y="30" width="34" height="20" class="probe"/><text x="87" y="22" text-anchor="middle">émetteur</text>
+    <rect x="256" y="30" width="34" height="20" class="probe"/><text x="273" y="22" text-anchor="middle">récepteur</text>
+    <line x1="180" y1="92" x2="180" y2="146" class="crack"/>
+    <path d="M87 50 L180 92 L273 50" class="ray top"/>
+    <path d="M87 50 L180 146 L273 50" class="ray bot"/>
+    <path d="M87 50 L273 50" class="ray lat"/>
+    <path d="M87 50 L180 190 L273 50" class="ray back"/>
+    <text x="190" y="90" class="t-top">extrémité haute</text>
+    <text x="190" y="152" class="t-bot">extrémité basse</text>
+    <text x="180" y="66" text-anchor="middle" class="t-mut">onde latérale</text>
+    <text x="180" y="208" text-anchor="middle" class="t-mut">écho de fond</text>
+  </svg>
+</section>
 
-        <a href="https://tofd-analysis.streamlit.app/" class="btn btn-primary" target="_blank">Lancer l'app</a>
-      </div>
-    </header>
+<section id="methode" class="wrap">
+  <h2>La méthode, étape par étape</h2>
+  <ol class="steps">
+    <li><h3>Regrouper</h3><p>Un k-means rassemble les A-scans qui se ressemblent en clusters.</p></li>
+    <li><h3>Débruiter</h3><p>Un autoencodeur est entraîné par cluster, sur des mini-lots de 5 A-scans.</p></li>
+    <li><h3>Mesurer l'enveloppe</h3><p>L'enveloppe de Hilbert du signal débruité révèle les pics, retenus s'ils ressortent assez (prominence minimale).</p></li>
+    <li><h3>Séparer les extrémités proches</h3><p>Un second pic est cherché près du principal, selon la largeur à mi-hauteur, une amplitude relative minimale et une séparation maximale réaliste.</p></li>
+    <li><h3>Vérifier sur le signal brut</h3><p>Chaque tip est comparé au centre du paquet d'échos sur le B-scan non traité. Au-delà de la tolérance, il est remplacé.</p></li>
+  </ol>
+  <p class="note">En option, avec la vitesse du son et le demi-écartement des sondes, l'application calcule la hauteur du défaut en millimètres.</p>
+</section>
 
-    <main>
-      <section class="hero">
-        <div class="container hero-grid">
-          <div class="hero-copy">
-            <span class="badge">Projet innovant • 2026</span>
-            <h1>TOFD</h1>
-            <p class="lead">
-              Une solution pensée pour transformer des données complexes en
-              décisions claires, rapides et exploitables.
-            </p>
+<section id="limites" class="wrap split">
+  <div>
+    <h2>Ce que l'outil ne prétend pas faire</h2>
+    <p>Quand les deux extrémités sont très proches, leurs échos fusionnent dans l'enveloppe. L'outil l'indique (« tips fusionnés ») plutôt que d'inventer un second pic. Un repli de détection existe, mais il demande un contrôle visuel.</p>
+    <p>Piste envisagée : une déconvolution parcimonieuse (matching pursuit) pour séparer des échos qui se recouvrent.</p>
+  </div>
+  <div>
+    <h2>Essayer</h2>
+    <p>L'application Streamlit permet de régler chaque paramètre et de télécharger la figure de détection. Sans fichier, elle utilise un B-scan simulé.</p>
+    <p><a class="btn" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Ouvrir l'application</a>
+       <a class="link" href="https://github.com/cachaualix/site_tofd" target="_blank" rel="noreferrer">Code source sur GitHub</a></p>
+  </div>
+</section>
+</main>
 
-            <div class="cta-row">
-              <a href="#fonctionnalites" class="btn btn-primary">Découvrir</a>
-              <a href="#contact" class="btn btn-secondary">Nous contacter</a>
-            </div>
-
-            <div class="hero-stats">
-              <div>
-                <strong>+120%</strong>
-                <span>Productivité</span>
-              </div>
-              <div>
-                <strong>24/7</strong>
-                <span>Accessibilité</span>
-              </div>
-              <div>
-                <strong>100%</strong>
-                <span>Web-first</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="hero-visual">
-            <div class="dashboard-card">
-              <div class="topbar">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-
-              <div class="chart-area">
-                <div class="chart-bars">
-                  <span style="height: 40%"></span>
-                  <span style="height: 60%"></span>
-                  <span style="height: 70%"></span>
-                  <span style="height: 85%"></span>
-                  <span style="height: 95%"></span>
-                  <span style="height: 75%"></span>
-                  <span style="height: 100%"></span>
-                </div>
-
-                <div class="chart-metrics">
-                  <div>
-                    <small>Performance</small>
-                    <strong>94.8%</strong>
-                  </div>
-                  <div class="metric-green">
-                    <small>Suivi</small>
-                    <strong>+28%</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div class="mini-cards">
-                <div class="mini-card">
-                  <small>Analyse</small>
-                  <strong>Rapide</strong>
-                </div>
-                <div class="mini-card accent">
-                  <small>Flux</small>
-                  <strong>Optimisé</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="apropos" class="section">
-        <div class="container">
-          <div class="section-heading">
-            <span class="section-tag">À propos</span>
-            <h2>Un projet pensé pour l'efficacité.</h2>
-          </div>
-
-          <div class="about-grid">
-            <div class="about-card">
-              <h3>Notre vision</h3>
-              <p>
-                TOFD a été conçu pour offrir une expérience claire, rapide et
-                moderne. L'objectif est de simplifier la compréhension des
-                données et de favoriser la prise de décision.
-              </p>
-            </div>
-
-            <div class="about-card">
-              <h3>Notre approche</h3>
-              <p>
-                Nous combinons simplicité, performance et ergonomie pour proposer
-                un produit accessible, modulable et prêt à évoluer.
-              </p>
-            </div>
-
-            <div class="about-card">
-              <h3>Notre objectif</h3>
-              <p>
-                Créer une solution qui apporte de la valeur dès le premier
-                contact, tout en restant facile à maintenir et à développer.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="fonctionnalites" class="section section-alt">
-        <div class="container">
-          <div class="section-heading">
-            <span class="section-tag">Fonctionnalités</span>
-            <h2>Des fonctionnalités orientées résultat.</h2>
-          </div>
-
-          <div class="features-grid">
-            <article class="feature-card">
-              <div class="icon">01</div>
-              <h3>Interface moderne</h3>
-              <p>
-                Une expérience utilisateur fluide, claire et pensée pour la
-                conversion.
-              </p>
-            </article>
-
-            <article class="feature-card">
-              <div class="icon">02</div>
-              <h3>Analyse rapide</h3>
-              <p>
-                Résultats compréhensibles, données structurées et accès instantané
-                à l'information.
-              </p>
-            </article>
-
-            <article class="feature-card">
-              <div class="icon">03</div>
-              <h3>Évolutivité</h3>
-              <p>
-                Le projet est conçu pour grandir avec toi, sans repartir de zéro.
-              </p>
-            </article>
-
-            <article class="feature-card">
-              <div class="icon">04</div>
-              <h3>UX premium</h3>
-              <p>
-                Un design élégant, cohérent et professionnel pour inspirer
-                confiance.
-              </p>
-            </article>
-
-            <article class="feature-card">
-              <div class="icon">05</div>
-              <h3>Accessibilité</h3>
-              <p>
-                Compatible mobile, lisible, simple à utiliser, partout et à tout
-                moment.
-              </p>
-            </article>
-
-            <article class="feature-card">
-              <div class="icon">06</div>
-              <h3>Déploiement simple</h3>
-              <p>
-                Prêt à être publié gratuitement via GitHub Pages ou hébergé
-                ailleurs.
-              </p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section id="avantages" class="section">
-        <div class="container">
-          <div class="section-heading">
-            <span class="section-tag">Avantages</span>
-            <h2>Pourquoi ce site a un vrai impact ?</h2>
-          </div>
-
-          <div class="advantage-layout">
-            <div class="advantage-text">
-              <div class="check-item">
-                <span>✓</span>
-                <p>Une première impression professionnelle dès la première visite.</p>
-              </div>
-              <div class="check-item">
-                <span>✓</span>
-                <p>Idéal pour présenter un projet, une startup, une équipe ou une idée.</p>
-              </div>
-              <div class="check-item">
-                <span>✓</span>
-                <p>Hébergement gratuit et facile à maintenir sans frais.</p>
-              </div>
-              <div class="check-item">
-                <span>✓</span>
-                <p>Design moderne qui inspire confiance et crédibilité.</p>
-              </div>
-            </div>
-
-            <div class="spotlight">
-              <div class="spotlight-card">
-                <small>Impact visuel</small>
-                <h3>Un projet qui donne envie d'en savoir plus.</h3>
-                <p>
-                  Un bon site n'est pas seulement beau : il crédibilise ton projet,
-                  clarifie ton message et aide à convaincre.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="stack" class="section section-alt">
-        <div class="container">
-          <div class="section-heading">
-            <span class="section-tag">Stack</span>
-            <h2>Technologies simples et puissantes.</h2>
-          </div>
-
-          <div class="stack-pills">
-            <span>HTML5</span>
-            <span>CSS3</span>
-            <span>JavaScript</span>
-            <span>GitHub Pages</span>
-            <span>Responsive</span>
-            <span>SEO</span>
-          </div>
-        </div>
-      </section>
-
-      <section id="contact" class="section cta-section">
-        <div class="container">
-          <div class="cta-box">
-            <div>
-              <span class="section-tag">Contact</span>
-              <h2>Tu veux un site qui ressemble à du "vrai pro" ?</h2>
-            </div>
-
-            <div class="cta-actions">
-              <a href="mailto:contact@tonsite.com" class="btn btn-primary">contact@tonsite.com</a>
-              <a href="https://github.com/cachaualix" class="btn btn-secondary" target="_blank" rel="noreferrer">GitHub</a>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="footer">
-      <div class="container footer-row">
-        <p>© <span id="year"></span> TOFD. Tous droits réservés.</p>
-        <p>Designed for impact.</p>
-      </div>
-    </footer>
-
-    <script src="script.js"></script>
-  </body>
+<footer class="wrap foot">
+  <p>Projet STG2 · <span id="year"></span> · Python, PyTorch, scikit-learn, SciPy, Streamlit</p>
+  <p><a class="link" href="https://github.com/cachaualix" target="_blank" rel="noreferrer">github.com/cachaualix</a></p>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>
 </html>
