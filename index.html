@@ -1,20 +1,15 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <!--On defini la langue du site, on choisi d'afficher correctement les accents et on adapte le site au format telephone-->
-<title>TOFD – Automatic extraction of defect tips</title>
-   <!--On nomme le titre de la page: nom de l'onglet de la page, du titre bleu cliquable google etc-->
-<meta name="description" content="Python pipeline that denoises a TOFD B-scan, detects the upper and lower tips of a defect and derives its height.">
-   <!--résumé de ma page destinée aux moteurs de recherche etc-->
-<meta name="theme-color" content="#4F46E5">
-   <!--donne la couleur autour de la page sur tel etc: rien sur la page car toujours dans le head-->
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!--permet de faire charger un peu plus vite le site et la police-->
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-<style>:root{--brand:#4F46E5;--brand2:#06B6D4;--ink:#0F172A;--muted:#5B6478;--bg:#F5F7FF;--line:#E3E8F5;--top:#12A150;--bot:#D1229B}
-*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:90px}
-body{margin:0;font:500 1.05rem/1.7 "Plus Jakarta Sans",system-ui,sans-serif;color:var(--ink);background:var(--bg)}
-h1,h2,h3{font-weight:800;letter-spacing:-.03em;line-height:1.1;margin:0 0 .5em}
-h1{font-size:clamp(2.4rem,6vw,4.4rem);max-width:18ch;margin-inline:auto}
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">  <!--On defini la langue du site, on choisi d'afficher correctement les accents et on adapte le site au format telephone-->
+<title>TOFD – Automatic extraction of defect tips</title>  <!--On nomme le titre de la page: nom de l'onglet de la page, du titre bleu cliquable google etc-->
+<meta name="description" content="Python pipeline that denoises a TOFD B-scan, detects the upper and lower tips of a defect and derives its height.">  <!--résumé de ma page destinée aux moteurs de recherche etc-->
+<meta name="theme-color" content="#4F46E5">  <!--donne la couleur autour de la page sur tel etc: rien sur la page car toujours dans le head-->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>  <!--permet de faire charger un peu plus vite le site et la police-->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">  <!--charge la police depuis google fonts et les variantes (gras etc), display affiche la police de secors et le change quans la vraie police est prete-->
+<style>:root{--brand:#4F46E5;--brand2:#06B6D4;--ink:#0F172A;--muted:#5B6478;--bg:#F5F7FF;--line:#E3E8F5;--top:#12A150;--bot:#D1229B}  /*style ouvre le bloc CSS, root declare les couleurs du site comme des variables, on choisit tout: brand correspond a la couleur des boutons... ink correspond au texte principal*/
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:90px}  /*l'étoile cible tous les elements, on simplifie la mise en page, la taille d'un boite inclu sa bordure. le scroll behavior: quaand je clique sur un lien du menu la page glisse jusqu'à la secton au lieu de sauter d'un coup. Le scroll padding top col la barre de navigation*/
+body{margin:0;font:500 1.05rem/1.7 "Plus Jakarta Sans",system-ui,sans-serif;color:var(--ink);background:var(--bg)}  /*margin: supprime la marge entre la fenetre de mon site et la fenetre google. font truc: regle la taille du texte, son epaisseur, la hauteur de la ligne etc. color donne la couleur dut exte et background donne le fond de page*/
+h1,h2,h3{font-weight:800;letter-spacing:-.03em;line-height:1.1;margin:0 0 .5em}  /*la liste s'applique aux trois titres: on les met en extra-gras, on resserre les lettres, on reduit l'interligne et on regle un peu les marges*/
+h1{font-size:clamp(2.4rem,6vw,4.4rem);max-width:18ch;margin-inline:auto}  /**/
 h2{font-size:clamp(1.9rem,4vw,2.8rem)}h3{font-size:1.2rem;letter-spacing:-.01em}
 p{margin:0 0 1em;color:var(--muted)}a{color:inherit}
 :focus-visible{outline:3px solid var(--brand2);outline-offset:3px}
