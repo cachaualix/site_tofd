@@ -1,236 +1,427 @@
-<!DOCTYPE html>
+<!DOCTYPE html>  <!--indique au navigateur que la page est en HTML moderne (HTML5)-->
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">  <!--On defini la langue du site, on choisi d'afficher correctement les accents et on adapte le site au format telephone-->
 <title>TOFD – Automatic extraction of defect tips</title>  <!--On nomme le titre de la page: nom de l'onglet de la page, du titre bleu cliquable google etc-->
 <meta name="description" content="Python pipeline that denoises a TOFD B-scan, detects the upper and lower tips of a defect and derives its height.">  <!--résumé de ma page destinée aux moteurs de recherche etc-->
 <meta name="theme-color" content="#4F46E5">  <!--donne la couleur autour de la page sur tel etc: rien sur la page car toujours dans le head-->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>  <!--permet de faire charger un peu plus vite le site et la police-->
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">  <!--charge la police depuis google fonts et les variantes (gras etc), display affiche la police de secors et le change quans la vraie police est prete-->
-<style>:root{--brand:#4F46E5;--brand2:#06B6D4;--ink:#0F172A;--muted:#5B6478;--bg:#F5F7FF;--line:#E3E8F5;--top:#12A150;--bot:#D1229B}  /*style ouvre le bloc CSS, root declare les couleurs du site comme des variables, on choisit tout: brand correspond a la couleur des boutons... ink correspond au texte principal*/
-*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:90px}  /*l'étoile cible tous les elements, on simplifie la mise en page, la taille d'un boite inclu sa bordure. le scroll behavior: quaand je clique sur un lien du menu la page glisse jusqu'à la secton au lieu de sauter d'un coup. Le scroll padding top col la barre de navigation*/
-body{margin:0;font:500 1.05rem/1.7 "Plus Jakarta Sans",system-ui,sans-serif;color:var(--ink);background:var(--bg)}  /*margin: supprime la marge entre la fenetre de mon site et la fenetre google. font truc: regle la taille du texte, son epaisseur, la hauteur de la ligne etc. color donne la couleur dut exte et background donne le fond de page*/
-h1,h2,h3{font-weight:800;letter-spacing:-.03em;line-height:1.1;margin:0 0 .5em}  /*la liste s'applique aux trois titres: on les met en extra-gras, on resserre les lettres, on reduit l'interligne et on regle un peu les marges*/
-h1{font-size:clamp(2.4rem,6vw,4.4rem);max-width:18ch;margin-inline:auto}  /**/
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">  <!--charge la police Plus Jakarta Sans depuis Google Fonts, graisses 500 à 800 ; display=swap affiche d'abord le texte avec une police de secours-->
+
+  <!--ouvre le bloc CSS ; :root définit les couleurs du site en variables (brand = indigo principal, ink = texte, bg = fond, top/bot = vert et magenta des tips)-->
+<style>:root{--brand:#4F46E5;--brand2:#06B6D4;--ink:#0F172A;--muted:#5B6478;--bg:#F5F7FF;--line:#E3E8F5;--top:#12A150;--bot:#D1229B}  
+  /* * = tous les éléments : box-sizing:border-box inclut padding et bordure dans la largeur ; html : défilement fluide vers les sections, avec une marge de 90px pour que le menu fixe ne cache pas les titres */
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:90px}
+  /* body : margin:0 enlève la marge par défaut ; font = graisse 500, taille 1.05rem, interligne 1.7, polices dans l'ordre (Plus Jakarta Sans, police système, sans-serif) ; couleur du texte ink, fond bg */
+body{margin:0;font:500 1.05rem/1.7 "Plus Jakarta Sans",system-ui,sans-serif;color:var(--ink);background:var(--bg)}
+  /* h1, h2, h3 : extra-gras (800), lettres resserrées, interligne serré (1.1), pas de marge en haut, 0.5em en bas */
+h1,h2,h3{font-weight:800;letter-spacing:-.03em;line-height:1.1;margin:0 0 .5em}
+  /* h1 : taille fluide entre 2.4rem et 4.4rem (clamp, idéal = 6% de la largeur d'écran) ; largeur max 18 caractères pour que le titre passe à la ligne ; margin-inline:auto le centre */
+h1{font-size:clamp(2.4rem,6vw,4.4rem);max-width:18ch;margin-inline:auto}
+  /* h2 : titres de section, taille fluide de 1.9 à 2.8rem ; h3 : titres des cartes, 1.2rem, lettres à peine resserrées (remplace le -.03em de la ligne 16) */
 h2{font-size:clamp(1.9rem,4vw,2.8rem)}h3{font-size:1.2rem;letter-spacing:-.01em}
+  /* p : pas de marge en haut, 1em en bas, texte gris (muted) ; a : inherit = les liens reprennent la couleur du texte autour au lieu du bleu par défaut */
 p{margin:0 0 1em;color:var(--muted)}a{color:inherit}
+  /* :focus-visible : contour cyan de 3px (décalé de 3px) autour de l'élément choisi au clavier avec Tab ; important pour l'accessibilité */
 :focus-visible{outline:3px solid var(--brand2);outline-offset:3px}
+  /* .wrap : conteneur centré, largeur = la plus petite de 1100px ou (100% - 40px), pour garder 20px de marge de chaque côté sur mobile */
 .wrap{width:min(1100px,100% - 40px);margin-inline:auto}
+  /* .nav : menu flottant fixé en haut (fixed), centré avec left:50% + translateX(-50%) ; z-index:10 le met devant ; flex = logo à gauche, liens à droite ; fond blanc 88% opaque avec flou ; border-radius:999px = pilule ; ombre douce */
 .nav{position:fixed;top:16px;left:50%;transform:translateX(-50%);width:min(1100px,100% - 32px);z-index:10;display:flex;align-items:center;justify-content:space-between;padding:10px 10px 10px 26px;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);border-radius:999px;box-shadow:0 10px 40px -12px rgba(15,23,42,.25)}
+  /* .logo : texte TOFD en extra-gras, 1.25rem, sans soulignement, lettres un peu espacées */
 .logo{font-weight:800;font-size:1.25rem;text-decoration:none;letter-spacing:.04em}
+/* .nav nav : les liens du menu sur une ligne (flex), centrés verticalement, 26px d'écart, texte semi-gras un peu plus petit */
 .nav nav{display:flex;align-items:center;gap:26px;font-size:.95rem;font-weight:600}
+/* liens du menu : sans soulignement et gris ; au survol (:hover) ils deviennent bleu nuit ; le bouton garde son blanc grâce à !important dans .btn */
 .nav nav a{text-decoration:none;color:var(--muted)}.nav nav a:hover{color:var(--ink)}
+/* .btn : bouton pilule, dégradé diagonal indigo vers violet, texte blanc forcé (!important), ombre colorée ; transition = animation de 0.2s quand transform ou ombre changent */
 .btn{display:inline-block;background:linear-gradient(135deg,var(--brand),#7C3AED);color:#fff!important;padding:.8em 1.6em;border-radius:999px;font-weight:700;text-decoration:none;box-shadow:0 8px 24px -8px rgba(79,70,229,.7);transition:transform .2s,box-shadow .2s}
+/* au survol, le bouton monte de 2px (translateY négatif) et son ombre s'allonge : effet de soulèvement animé par la transition */
 .btn:hover{transform:translateY(-2px);box-shadow:0 14px 30px -8px rgba(79,70,229,.8)}
+/* .btn.light : variante du bouton (éléments ayant les deux classes btn et light) : fond blanc, texte indigo, ombre noire discrète ; pour les fonds colorés */
 .btn.light{background:#fff;color:var(--brand)!important;box-shadow:0 8px 24px -8px rgba(0,0,0,.3)}
+/* .btn.ghost : bouton secondaire presque transparent, sans ombre, avec une fine bordure blanche */
 .btn.ghost{background:rgba(255,255,255,.16);box-shadow:none;border:1px solid rgba(255,255,255,.4)}
+/* .hero : bandeau du haut ; position:relative sert de repère aux taches, overflow:hidden coupe ce qui dépasse ; texte blanc centré ; 170px de padding en haut (menu), 210px en bas (la démo chevauche) ; seuls les coins du bas sont arrondis ; dégradé diagonal bleu sombre, indigo, cyan */
 .hero{position:relative;overflow:hidden;text-align:center;color:#fff;padding:170px 0 210px;border-radius:0 0 56px 56px;background:linear-gradient(135deg,#1E1B6B 0%,#4F46E5 50%,#06B6D4 130%)}
+/* taches décoratives du bandeau : pseudo-éléments ::before et ::after (créés par le CSS, content:"" obligatoire), positionnés en absolu, en cercle (50%), très floutés et à moitié transparents */
 .hero::before,.hero::after{content:"";position:absolute;border-radius:50%;filter:blur(60px);opacity:.5}
+/* tache violette de 420px à gauche, en partie hors du bandeau (left négatif) */
 .hero::before{width:420px;height:420px;background:#A78BFA;left:-120px;top:40px}
+/* tache cyan de 380px en bas à droite, qui déborde du bandeau */
 .hero::after{width:380px;height:380px;background:#22D3EE;right:-100px;bottom:-60px}
+/* le contenu du bandeau (.wrap) passe devant les taches : position:relative + z-index:1 */
 .hero .wrap{position:relative;z-index:1}
+/* .badge : pastille au-dessus du titre, forme de pilule, fond blanc très transparent, fine bordure, petit texte semi-gras, 26px d'espace dessous */
 .badge{display:inline-block;padding:.4em 1.1em;border-radius:999px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);font-size:.9rem;font-weight:600;margin-bottom:26px}
+/* .hero p : paragraphe du bandeau, blanc 88%, plus grand, largeur max 56 caractères, centré avec margin auto ; plus précis que la règle p générale, donc prioritaire */
 .hero p{color:rgba(255,255,255,.88);font-size:1.25rem;max-width:56ch;margin:22px auto 34px}
+/* .cta : boutons du bandeau côte à côte (flex), 14px d'écart, centrés, à la ligne si l'écran est étroit */
 .hero .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+/* .demo : carte blanche de la démo ; margin-top négatif (-130px) = elle remonte et chevauche le bandeau ; position:relative + z-index:2 la placent devant ; coins arrondis, grande ombre */
 .demo{position:relative;z-index:2;margin:-130px auto 0;background:#fff;border-radius:28px;padding:22px;box-shadow:0 40px 90px -30px rgba(30,27,107,.55)}
+/* .demo-grid : grille de 2 colonnes, B-scan à gauche (1fr = tout l'espace restant) et A-scan à droite (230px fixes), 14px d'écart */
 .demo-grid{display:grid;grid-template-columns:1fr 230px;gap:14px}
+/* canvas : pleine largeur de sa colonne, hauteur proportionnelle, display:block pour supprimer le petit vide sous l'élément, coins arrondis, fond sombre */
 canvas{width:100%;height:auto;display:block;border-radius:16px;background:#0A0F1E}
+/* .controls : grille de 2 colonnes égales (libellé | champ), 12px entre les lignes et 30px entre les colonnes, contenu centré verticalement */
 .controls{display:grid;grid-template-columns:1fr 1fr;gap:12px 30px;margin-top:20px;align-items:center}
+/* libellés des commandes en semi-gras ; <output> (le numéro d'A-scan affiché) en indigo extra-gras */
 .controls label{font-weight:600}output{color:var(--brand);font-weight:800}
+/* input[type=range] : cible seulement les curseurs ; pleine largeur de sa cellule ; accent-color colore le curseur natif en indigo */
 input[type=range]{width:100%;accent-color:var(--brand)}
+/* .readout : zone des résultats ; grid-column:1/-1 = sur toute la largeur de la grille ; boîtes côte à côte (flex), 16px d'écart, à la ligne si besoin */
 .readout{grid-column:1/-1;display:flex;gap:16px;margin:4px 0 0;flex-wrap:wrap}
+/* .readout div : chaque boîte de résultat ; flex:1 = elles se partagent la place, largeur min 130px, fond pâle, coins arrondis */
 .readout div{flex:1;min-width:130px;background:var(--bg);border-radius:16px;padding:12px 18px}
+/* dt : intitulé d'un résultat (Top tip) ; petit, gris, semi-gras ; flex pour aligner la pastille colorée et le texte */
 dt{font-size:.85rem;color:var(--muted);display:flex;align-items:center;gap:8px;font-weight:600}
+/* dd : valeur du résultat ; margin:0 retire la marge gauche par défaut du navigateur ; grande taille et extra-gras */
 dd{margin:0;font-weight:800;font-size:1.7rem;letter-spacing:-.02em}
+/* .num : champs numériques des tips ; font:inherit = reprend la police du site (sinon celle du navigateur) ; 130px de large, bordure grise arrondie ; justify-self:start = aligné à gauche de sa cellule */
 .num{font:inherit;font-weight:700;width:130px;padding:.55em .8em;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);justify-self:start}
+/* .num:focus : quand on clique dans le champ, la bordure devient indigo ; outline:none retire le contour du navigateur, remplacé par la bordure */
 .num:focus{border-color:var(--brand);outline:none}
+/* .sw : petite barre colorée (18x4px) devant Top tip / Bottom tip ; inline-block pour que largeur et hauteur s'appliquent ; .sw.top = vert, .sw.bot = magenta */
 .sw{width:18px;height:4px;border-radius:2px;display:inline-block}.sw.top{background:var(--top)}.sw.bot{background:var(--bot)}
+/* figcaption : légende sous la démo, petit texte gris */
 figcaption{font-size:.88rem;color:var(--muted);margin:14px 4px 0}
+/* section : 104px d'espace en haut et en bas de chaque section */
 section{padding:104px 0}
+/* .center : texte centré ; son paragraphe est limité à 56 caractères et centré avec margin-inline:auto */
 .center{text-align:center}.center p{margin-inline:auto;max-width:56ch}
+/* .grid : grille de cartes, 20px d'écart ; repeat(auto-fit,minmax(250px,1fr)) = autant de colonnes d'au moins 250px que l'écran permet, s'adapte tout seul */
 .grid{display:grid;gap:20px;margin-top:48px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+/* .card : carte blanche avec bordure fine et coins arrondis, 30px de padding ; transition prépare l'animation du survol */
 .card{background:#fff;border:1px solid var(--line);border-radius:24px;padding:30px;transition:transform .25s,box-shadow .25s}
+/* .card:hover : au survol la carte monte de 6px et gagne une ombre indigo, animée par la transition */
 .card:hover{transform:translateY(-6px);box-shadow:0 24px 50px -20px rgba(79,70,229,.35)}
+/* .card p : pas de marge dans les cartes (remplace la marge basse de la règle p générale) */
 .card p{margin:0}
+/* .ico : pastille carrée 54px aux coins arrondis, dégradé indigo vers cyan ; grid + place-items:center = contenu centré, chiffre ou emoji blanc */
 .ico{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:1.5rem;color:#fff;font-weight:800;margin-bottom:18px;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+/* .steps : remplace les colonnes de .grid par des colonnes de 190px min pour afficher les 5 étapes sur une ligne (la règle la plus tardive gagne) ; leurs cartes ont un padding réduit à 26px */
 .steps{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}.steps .card{padding:26px}
+/* .split : 2 colonnes égales (texte | schéma), 64px d'écart, centrées verticalement */
 .split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+/* .pane : cadre blanc arrondi autour du schéma */
 .pane{background:#fff;border-radius:28px;padding:24px;border:1px solid var(--line)}
+/* svg : pleine largeur, hauteur proportionnelle (dessin vectoriel, net à toute taille) ; svg text : textes du schéma en 12px semi-gras ; fill colore le texte dans un SVG */
 svg{width:100%;height:auto}svg text{font:12px "Plus Jakarta Sans",sans-serif;fill:var(--ink);font-weight:600}
+/* éléments du schéma : fill = remplissage, stroke = trait ; .plate = plaque pâle à contour gris, .probe = sondes indigo, .crack = défaut, trait épais de 5px à bouts ronds */
 .plate{fill:var(--bg);stroke:var(--line)}.probe{fill:var(--brand)}.crack{stroke:var(--ink);stroke-width:5;stroke-linecap:round}
+/* .ray : rayons du schéma, fill:none et trait de 2px ; .top vert, .bot magenta ; .lat et .back (onde latérale et écho de fond) en gris pointillé : stroke-dasharray 4 4 = 4px de trait, 4px de vide */
 .ray{fill:none;stroke-width:2}.ray.top{stroke:var(--top)}.ray.bot{stroke:var(--bot)}.ray.lat,.ray.back{stroke:#9AA3B8;stroke-dasharray:4 4}
+/* couleurs des textes du schéma : t-top vert, t-bot magenta, t-mut gris ; plus précis que svg text, donc prioritaire */
 svg .t-top{fill:var(--top)}svg .t-bot{fill:var(--bot)}svg .t-mut{fill:var(--muted)}
+/* .limits : encadré jaune pâle à bordure dorée, coins arrondis, 44px de padding */
 .limits{background:#FFF8E6;border:1px solid #F5DFA3;border-radius:28px;padding:44px}
+/* .final : bloc d'appel à l'action de fin de page ; dégradé comme le bandeau, texte blanc centré, grands coins arrondis, 80px de padding vertical */
 .final{background:linear-gradient(135deg,#1E1B6B,#4F46E5 60%,#06B6D4 130%);color:#fff;text-align:center;border-radius:40px;padding:80px 28px}
+/* .final p : blanc 85%, largeur max 50 caractères, centré, 30px d'espace avant le bouton */
 .final p{color:rgba(255,255,255,.85);margin:0 auto 30px;max-width:50ch}
+/* footer : texte gris et petit ; flex avec space-between = mention à gauche, lien à droite ; passe à la ligne sur écran étroit */
 footer{padding:34px 0 50px;color:var(--muted);font-size:.9rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+/* effet d'apparition : si <html> a la classe js (ajoutée plus bas), les éléments .rv sont invisibles et décalés de 26px ; quand le script leur ajoute la classe in, ils apparaissent en fondu et glissent à leur place en 0.8s ; sans JavaScript tout reste visible */
 .js .rv{opacity:0;transform:translateY(26px);transition:opacity .8s,transform .8s}.js .rv.in{opacity:1;transform:none}
+/* @media max-width:820px : règles appliquées seulement sur écran de 820px ou moins ; les grilles passent en une colonne, les liens du menu sont masqués sauf le bouton (:not(.btn)), le bandeau et les sections sont moins espacés */
 @media(max-width:820px){.split,.demo-grid,.controls{grid-template-columns:1fr}.nav nav a:not(.btn){display:none}.hero{padding:140px 0 190px;border-radius:0 0 36px 36px}section{padding:72px 0}.limits{padding:28px}}
+/* prefers-reduced-motion : si le visiteur a demandé moins d'animations dans son système, les éléments .rv sont visibles tout de suite, le défilement n'est plus fluide et les survols ne sont plus animés */
 @media(prefers-reduced-motion:reduce){.js .rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}.card,.btn{transition:none}}
 </style>
+<!--fin du bloc CSS-->
+<!--ajoute la classe js à la balise html : elle active l'effet d'apparition (sans JavaScript, le contenu reste visible) ; </head> ferme l'en-tête-->
 <script>document.documentElement.classList.add('js')</script></head>
+<!--début de la partie visible de la page-->
 <body>
+<!--menu flottant : logo + liens d'ancre (#methode… défilent vers la section ayant cet id) + bouton vers l'app ; target="_blank" ouvre un nouvel onglet, rel="noreferrer" par sécurité ; aria-label nomme la navigation pour les lecteurs d'écran-->
 <div class="nav"><a class="logo" href="#">TOFD</a><nav aria-label="Navigation"><a href="#methode">Method</a><a href="#principe">Principle</a><a href="#app">App</a><a href="#limites">Limits</a><a class="btn" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Open the app</a></nav></div>
+<!--bandeau d'accueil (header.hero) : conteneur .wrap, pastille (span.badge), titre principal h1 (un seul par page), paragraphe, deux boutons dans div.cta (btn light = blanc, btn ghost = transparent)-->
 <header class="hero"><div class="wrap">
+<!--pastille au-dessus du titre-->
 <span class="badge">STG2 project · Non-destructive testing</span>
+<!--titre principal de la page (un seul h1 par page)-->
 <h1>Find the tips of a TOFD defect automatically</h1>
+<!--paragraphe de présentation du bandeau-->
 <p>A Python pipeline denoises your B-scan, detects the upper and lower diffraction echoes, then checks every result against the raw signal.</p>
+<!--les deux boutons du bandeau : blanc (light) et transparent (ghost)-->
 <div class="cta"><a class="btn light" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Try the app</a><a class="btn ghost" href="#methode">See the method</a></div>
+<!--ferme le conteneur wrap puis le bandeau-->
 </div></header>
+<!--contenu principal de la page (se ferme avec </main> avant le pied de page)-->
 <main>
+<!--carte de la démo : figure (illustration + légende) avec la classe demo ; style="margin-bottom:0" retire la marge basse par défaut-->
 <div class="wrap"><figure class="demo" style="margin-bottom:0">
+<!--deux zones de dessin remplies par le JavaScript : B-scan (id=bscan) et A-scan (id=ascan) ; role="img" + aria-label les décrivent aux lecteurs d'écran ; ne pas renommer les id-->
 <div class="demo-grid"><canvas id="bscan" width="720" height="440" role="img" aria-label="Simulated B-scan with the two defect tips"></canvas><canvas id="ascan" width="220" height="440" role="img" aria-label="A-scan at the chosen position"></canvas></div>
+<!--commandes : label for="pos" relié au curseur par l'id ; output id=posOut affiche le numéro d'A-scan (rempli par le script) ; curseur de position type="range" de 0 à 359, départ à 180-->
 <div class="controls"><label for="pos">Move the probe: A-scan <output id="posOut">180</output></label><input id="pos" type="range" min="0" max="359" value="180">
+<!--champs numériques des profondeurs de tips (id=tipTop, tipBot) : type=number avec min/max, step=1, valeur de départ 380 et 490 ; inputmode=numeric ouvre le clavier numérique sur téléphone ; le script les lit par leur id-->
 <label for="tipTop">Top tip (sample, 200 to 480)</label><input id="tipTop" class="num" type="number" min="200" max="480" step="1" value="380" inputmode="numeric">
 <label for="tipBot">Bottom tip (sample, 230 to 510)</label><input id="tipBot" class="num" type="number" min="230" max="510" step="1" value="490" inputmode="numeric">
+<!--résultats : liste de description dl/dt/dd ; la pastille <i class="sw …"> est décorative (verte pour top, magenta pour bot) ; id=rTop et rBot sont remplis par le script ; le dernier </div> ferme div.controls-->
 <dl class="readout"><div><dt><i class="sw top"></i>Top tip</dt><dd id="rTop">—</dd></div><div><dt><i class="sw bot"></i>Bottom tip</dt><dd id="rBot">—</dd></div></dl></div>
+<!--légende de la démo (précise qu'il s'agit d'une simulation) ; ferme figure.demo et le conteneur wrap-->
 <figcaption>Illustrative simulation: enter the depth of the two tips (confirm with Enter) and the detection adapts. Move the slider to change the probe position. Far from the defect, the echoes are buried in noise and nothing is detected.</figcaption>
 </figure></div>
 
+<!--section méthode : l'id sert de cible aux liens #methode ; 3 classes sur le même élément (wrap = conteneur, center = texte centré, rv = apparition au défilement) ; h2 = titre de section-->
 <section id="methode"><div class="wrap center rv"><h2>5 steps, from noisy signal to reliable tip</h2><p>Each step fixes a weakness of the previous one.</p></div>
+<!--5 cartes d'étapes dans une grille (grid steps) ; chaque carte = pastille numérotée (.ico) + titre h3 + texte ; pour ajouter une étape, copier une carte entière ; rv = apparition au défilement-->
 <div class="wrap"><div class="grid steps">
+<!--carte « Cluster » (étape 1)-->
 <div class="card rv"><div class="ico">1</div><h3>Cluster</h3><p>A k-means groups similar A-scans together.</p></div>
+<!--carte « Denoise » (étape 2)-->
 <div class="card rv"><div class="ico">2</div><h3>Denoise</h3><p>One autoencoder per group, trained on mini-batches of 5 A-scans.</p></div>
+<!--carte « Envelope » (étape 3)-->
 <div class="card rv"><div class="ico">3</div><h3>Envelope</h3><p>The Hilbert envelope reveals the peaks that stand out enough.</p></div>
+<!--carte « Separate » (étape 4)-->
 <div class="card rv"><div class="ico">4</div><h3>Separate</h3><p>A second peak is searched near the main one, with realistic safeguards.</p></div>
+<!--carte « Verify » (étape 5)-->
 <div class="card rv"><div class="ico">5</div><h3>Verify</h3><p>Each tip is compared with the raw signal, and replaced if the gap is too large.</p></div>
+<!--ferme la grille (ou l'encadré), le conteneur wrap et la section-->
 </div></div></section>
 
+<!--section principe : texte à gauche, schéma à droite (grille split) ; padding-top:0 retire le haut de la section ; svg = dessin vectoriel, viewBox définit sa taille interne de 360 x 220-->
 <section id="principe" style="padding-top:0"><div class="wrap split">
+<!--colonne de gauche : titre et deux paragraphes explicatifs-->
 <div class="rv"><h2>How TOFD works</h2><p>Two ultrasonic probes are placed on either side of a weld: one transmits, the other receives.</p><p>Both tips of a defect diffract the wave and each sends back an echo, between the lateral wave and the back-wall echo. Their arrival time gives the depth of each tip, hence the height of the defect.</p></div>
+<!--colonne de droite : cadre blanc contenant le schéma SVG-->
 <div class="pane rv"><svg viewBox="0 0 360 220" role="img" aria-label="Diagram: transmitting probe, receiving probe and defect">
+<!--contenu du schéma : coordonnées x vers la droite, y vers le bas depuis le coin haut gauche ; rect = plaque et sondes, line = défaut, path (M = déplacer, L = tracer) = les rayons, text = étiquettes ; les classes renvoient aux couleurs du CSS-->
 <rect x="20" y="50" width="320" height="140" rx="10" class="plate"/><rect x="70" y="30" width="34" height="20" rx="4" class="probe"/><text x="87" y="22" text-anchor="middle">transmitter</text><rect x="256" y="30" width="34" height="20" rx="4" class="probe"/><text x="273" y="22" text-anchor="middle">receiver</text>
+<!--le défaut (line), puis les 4 rayons (path) : vers l'extrémité haute, l'extrémité basse, l'onde latérale et l'écho de fond-->
 <line x1="180" y1="92" x2="180" y2="146" class="crack"/><path d="M87 50 L180 92 L273 50" class="ray top"/><path d="M87 50 L180 146 L273 50" class="ray bot"/><path d="M87 50 L273 50" class="ray lat"/><path d="M87 50 L180 190 L273 50" class="ray back"/>
+<!--étiquettes colorées : tips haut et bas, onde latérale, écho de fond ; ferme ensuite le svg et le cadre-->
 <text x="190" y="90" class="t-top">upper tip</text><text x="190" y="152" class="t-bot">lower tip</text><text x="180" y="66" text-anchor="middle" class="t-mut">lateral wave</text><text x="180" y="208" text-anchor="middle" class="t-mut">back-wall echo</text></svg></div>
+<!--ferme le conteneur et la section-->
 </div></section>
 
+<!--section app : fond blanc (style inline) ; 6 cartes dans une grille ; les emojis sont du simple texte, remplaçables-->
 <section id="app" style="background:#fff"><div class="wrap center rv"><h2>What the app does</h2><p>A Streamlit interface to test your own B-scans.</p></div>
+<!--grille de 6 cartes décrivant l'application-->
 <div class="wrap"><div class="grid">
+<!--carte « All the settings » (icône : 🎛️)-->
 <div class="card rv"><div class="ico">🎛️</div><h3>All the settings</h3><p>Clusters, iterations, prominence, separation, tolerance: every parameter is adjustable.</p></div>
+<!--carte « Top and bottom tips » (icône : 📈)-->
 <div class="card rv"><div class="ico">📈</div><h3>Top and bottom tips</h3><p>Position of the selected A-scan and of both tips, with a warning if they merge.</p></div>
+<!--carte « Verification on the raw signal » (icône : ✅)-->
 <div class="card rv"><div class="ico">✅</div><h3>Verification on the raw signal</h3><p>A tip too far from the center of the echo packet is corrected automatically.</p></div>
+<!--carte « Defect height » (icône : 📐)-->
 <div class="card rv"><div class="ico">📐</div><h3>Defect height</h3><p>Optional, using the sound velocity and half the probe spacing.</p></div>
+<!--carte « Figure export » (icône : 🖼️)-->
 <div class="card rv"><div class="ico">🖼️</div><h3>Figure export</h3><p>Download the detection result as a PNG.</p></div>
+<!--carte « Your own data » (icône : 📂)-->
 <div class="card rv"><div class="ico">📂</div><h3>Your own data</h3><p>Upload a B-scan image, or run the simulated demo.</p></div>
+<!--ferme la grille (ou l'encadré), le conteneur wrap et la section-->
 </div></div></section>
 
+<!--section limites : encadré jaune (limits) ; styles inline sur les paragraphes pour un texte brun-doré lisible sur fond jaune, largeur max 70 caractères-->
 <section id="limites"><div class="wrap"><div class="limits rv"><h2>What the tool does not claim to do</h2>
+<!--premier paragraphe : l'avertissement sur les tips fusionnés-->
 <p style="color:#6B5B1E;max-width:70ch">When the two tips are very close, their echoes merge in the envelope. The tool flags it (“tips merged”) instead of inventing a second peak, and the fallback detection requires a visual check.</p>
+<!--second paragraphe : la piste d'amélioration (margin:0 car c'est le dernier)-->
 <p style="color:#6B5B1E;max-width:70ch;margin:0">Idea under consideration: sparse deconvolution (matching pursuit) to separate overlapping echoes.</p></div></div></section>
 
+<!--bloc final d'appel à l'action : fond dégradé (final), titre, texte et bouton vers l'app ; pas d'id car le menu n'y renvoie pas-->
 <section style="padding-top:0"><div class="wrap"><div class="final rv"><h2>Try it on a B-scan</h2><p>Without a file, the app uses a simulated B-scan so you can explore.</p><a class="btn light" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Open the app</a></div></div></section>
+<!--fin du contenu principal-->
 </main>
+<!--pied de page : mention du projet et des technologies ; span id=year est vide et rempli par le script avec l'année en cours ; lien vers le profil GitHub-->
 <footer class="wrap"><span>STG2 project · <span id="year"></span> · Python, PyTorch, scikit-learn, SciPy, Streamlit</span><a href="https://github.com/cachaualix" target="_blank" rel="noreferrer">github.com/cachaualix</a></footer>
 
 <script>(() => {
+  // début du script de la démo ; (() => { ... })(); est une fonction exécutée immédiatement, ses variables restent privées
+  // T1 et T2 : profondeurs des tips simulés (modifiables) ; W = nombre d'A-scans (colonnes), H = échantillons en profondeur (lignes), XC = A-scan central du défaut
   let T1 = 380, T2 = 490; const W = 360, H = 600, XC = 180;
+  // seed : graine du générateur aléatoire
   let seed = 7;
+  // rnd : nombre pseudo-aléatoire entre 0 et 1, toujours la même suite grâce à la graine
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  // gauss : bruit en cloche (loi normale) fabriqué à partir de deux nombres aléatoires
   const gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-9)) * Math.cos(2 * Math.PI * rnd());
+  // wav(t) : impulsion ultrasonore = oscillation de période 14 éteinte par une cloche, centrée sur t = 0
   const wav = t => Math.cos(2 * Math.PI * t / 14) * Math.exp(-((t / 9) ** 2));
 
   // Simulated data: column = A-scan, row = depth sample
+  // build : fabrique le B-scan simulé, un tableau de W A-scans (x = numéro de l'A-scan) ; remet seed à 7 pour un bruit identique à chaque appel
   let data; const build = () => { seed = 7; data = Array.from({ length: W }, (_, x) => {
+    // a : un A-scan (H nombres décimaux)
     const a = new Float32Array(H);
+    // remplit l'A-scan de bruit aléatoire d'amplitude 0.12
     for (let j = 0; j < H; j++) a[j] = 0.12 * gauss();
+    // amp : force des échos selon la distance au centre (cloche de largeur 70) ; presque nulle loin du défaut
     const amp = Math.exp(-(((x - XC) / 70) ** 2));
+    // add(t0, A) : ajoute un écho de profondeur t0 et d'amplitude A à cet A-scan
     const add = (t0, A) => {
+      // ti : profondeur réelle de l'écho pour cet A-scan (hyperbole : plus on s'éloigne du centre, plus il est profond)
       const ti = Math.sqrt(t0 * t0 + (0.9 * (x - XC)) ** 2);
+      // écrit l'impulsion sur ±30 échantillons autour de ti (max et min évitent de sortir du tableau)
       for (let j = Math.max(0, Math.floor(ti - 30)); j < Math.min(H, ti + 30); j++) a[j] += A * amp * wav(j - ti);
     };
+    // ajoute les deux tips ; l'amplitude négative du second inverse la polarité de son écho
     add(T1, 0.9); add(T2, -0.8);
+    // pour chaque échantillon de cet A-scan
     for (let j = 0; j < H; j++) {
+      // ajoute l'onde latérale (profondeur 140) et l'écho de fond (560), présents sur tous les A-scans
       a[j] += 1.0 * wav(j - 140) + 1.1 * wav(j - 560);
     }
+    // renvoie l'A-scan terminé à Array.from, qui le range dans data
     return a;
   }); };
+  // première génération des données
   build();
 
+  // envelope : enveloppe d'un A-scan = moyenne glissante de la valeur absolue (le pipeline Python utilise l'enveloppe de Hilbert, plus précise)
   const envelope = a => {
+    // e : résultat ; k : demi-fenêtre de la moyenne (9 échantillons au total)
     const e = new Float32Array(H), k = 4;
+    // pour chaque échantillon j
     for (let j = 0; j < H; j++) {
+      // s : somme des valeurs absolues ; n : nombre d'échantillons additionnés
       let s = 0, n = 0;
+      // parcourt les voisins de j-k à j+k sans sortir du tableau et additionne leur valeur absolue
       for (let i = Math.max(0, j - k); i <= Math.min(H - 1, j + k); i++) { s += Math.abs(a[i]); n++; }
+      // moyenne = somme / nombre
       e[j] = s / n;
     }
+    // renvoie l'enveloppe
     return e;
   };
 
   // Detection: largest peak, then a second peak at least 25 samples away, between lateral wave and back wall
+  // detect(x) : cherche les deux tips dans l'A-scan numéro x
   const detect = x => {
+    // e : enveloppe de cet A-scan ; zone de recherche de 175 à 530 (entre onde latérale et écho de fond) ; thr : seuil 0.28 sous lequel un pic est du bruit
     const e = envelope(data[x]), lo = 175, hi = 530, thr = 0.28;
+    // p1 : indice du premier pic (-1 = rien trouvé)
     let p1 = -1;
+    // garde l'indice du plus grand point de l'enveloppe au-dessus du seuil
     for (let j = lo; j < hi; j++) if (e[j] > thr && (p1 < 0 || e[j] > e[p1])) p1 = j;
+    // aucun pic : on renvoie seulement l'enveloppe, donc pas de tips
     if (p1 < 0) return { env: e };
+    // p2 : indice du second pic
     let p2 = -1;
+    // même recherche, mais à au moins 25 échantillons du premier pic
     for (let j = lo; j < hi; j++) if (Math.abs(j - p1) >= 25 && e[j] > thr && (p2 < 0 || e[j] > e[p2])) p2 = j;
+    // pas de second pic : pas de tips
     if (p2 < 0) return { env: e };
+    // renvoie l'enveloppe, le tip le moins profond (top) et le plus profond (bot)
     return { env: e, top: Math.min(p1, p2), bot: Math.max(p1, p2) };
   };
 
+  // bs et as : les canvas du B-scan et de l'A-scan, retrouvés par leur id
   const bs = document.getElementById("bscan"), as = document.getElementById("ascan");
+  // bc et ac : leurs « pinceaux » 2D pour dessiner dedans
   const bc = bs.getContext("2d"), ac = as.getContext("2d");
+  // off : canvas caché de W x H pixels (1 pixel = 1 échantillon)
   const off = document.createElement("canvas"); off.width = W; off.height = H;
+  // paint : remplit l'image cachée de gris selon les données ; createImageData fournit un tableau de pixels (4 valeurs par pixel : rouge, vert, bleu, opacité)
   const paint = () => { const img = off.getContext("2d").createImageData(W, H);
+  // pour chaque colonne x (A-scan) et chaque ligne y (profondeur)
   for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) {
+    // v : niveau de gris ; tanh écrase les valeurs entre -1 et 1 ; 128 = signal nul, plus clair = positif, plus sombre = négatif ; i : position du pixel dans le tableau
     const v = 128 + 110 * Math.tanh(data[x][y] * 1.4), i = 4 * (y * W + x);
+    // rouge = vert = bleu = v donne un gris ; opacité 255 = pleine
     img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
   }
+  // colle l'image dans le canvas caché, puis paint() l'exécute une première fois
   off.getContext("2d").putImageData(img, 0, 0); }; paint();
 
+  // pos : curseur de position ; out : affichage de son numéro
   const pos = document.getElementById("pos"), out = document.getElementById("posOut");
+  // rT et rB : cases des résultats (tip haut et tip bas)
   const rT = document.getElementById("rTop"), rB = document.getElementById("rBot");
+  // couleurs des lignes de tips : vert et magenta
   const GREEN = "#3ddc84", MAG = "#ff4fd8";
 
+  // draw : redessine tout ; appelée à chaque changement
   const draw = () => {
+    // x : A-scan choisi (le + convertit le texte du curseur en nombre) ; d : résultat de la détection ; sx et sy : échelle entre les données et le canvas affiché
     const x = +pos.value, d = detect(x), sx = bs.width / W, sy = bs.height / H;
+    // affiche le numéro d'A-scan dans la page
     out.textContent = x;
+    // copie le B-scan caché sur le canvas visible, étiré à sa taille
     bc.drawImage(off, 0, 0, bs.width, bs.height);
+    // style de la ligne de la sonde : orange, pointillés (3 de trait, 4 de vide), épaisseur 1
     bc.strokeStyle = "#ffb454"; bc.setLineDash([3, 4]); bc.lineWidth = 1;
+    // trace la ligne verticale de la sonde : beginPath (début), moveTo (crayon en haut), lineTo (trait vers le bas), stroke (dessine)
     bc.beginPath(); bc.moveTo(x * sx, 0); bc.lineTo(x * sx, bs.height); bc.stroke();
+    // style des lignes de tips : pointillés 6/4, épaisseur 1.6
     bc.setLineDash([6, 4]); bc.lineWidth = 1.6;
+    // si la détection a trouvé des tips (d.top existe)
     if (d.top !== undefined) {
+      // ligne horizontale verte à la profondeur du tip haut (sy convertit les échantillons en pixels)
       bc.strokeStyle = GREEN; bc.beginPath(); bc.moveTo(0, d.top * sy); bc.lineTo(bs.width, d.top * sy); bc.stroke();
+      // ligne horizontale magenta à la profondeur du tip bas
       bc.strokeStyle = MAG; bc.beginPath(); bc.moveTo(0, d.bot * sy); bc.lineTo(bs.width, d.bot * sy); bc.stroke();
     }
-    bc.setLineDash([]); bc.fillStyle = "#fff"; bc.font = "12px 'Public Sans',sans-serif";
+    // retire les pointillés ; texte en blanc, dans la police du site
+    bc.setLineDash([]); bc.fillStyle = "#fff"; bc.font = "12px 'Plus Jakarta Sans',sans-serif";
+    // écrit « Probe position → » en bas à gauche du B-scan
     bc.fillText("Probe position →", 8, bs.height - 8);
-    bc.save(); bc.translate(14, 130); bc.rotate(-Math.PI / 2); bc.restore();
 
-    // A-scan : profondeur en vertical, amplitude en horizontal
+    // A-scan: depth is vertical, amplitude is horizontal
+    // repeint le fond de l'A-scan (efface le dessin précédent)
     ac.fillStyle = "#111"; ac.fillRect(0, 0, as.width, as.height);
+    // cx : axe central vertical ; k : pixels par échantillon en hauteur
     const cx = as.width / 2, k = as.height / H;
+    // trace l'axe central en gris
     ac.strokeStyle = "#666"; ac.lineWidth = 1; ac.beginPath(); ac.moveTo(cx, 0); ac.lineTo(cx, as.height); ac.stroke();
+    // courbe du signal en gris clair : commence un tracé
     ac.strokeStyle = "#d8e0e6"; ac.beginPath();
+    // pour chaque échantillon : décale le point à droite ou à gauche de l'axe selon l'amplitude (x 40) ; j ? lineTo : moveTo = si ce n'est pas le premier point on trace, sinon on place le crayon
     for (let j = 0; j < H; j++) { const px = cx + data[x][j] * 40; j ? ac.lineTo(px, j * k) : ac.moveTo(px, 0); }
+    // dessine la courbe du signal
     ac.stroke();
+    // enveloppe en orange : commence un tracé
     ac.strokeStyle = "#ffb454"; ac.beginPath();
+    // même principe pour l'enveloppe, agrandie x 80 (toujours positive, donc d'un seul côté de l'axe)
     for (let j = 0; j < H; j++) { const px = cx + d.env[j] * 80; j ? ac.lineTo(px, j * k) : ac.moveTo(px, 0); }
+    // dessine l'enveloppe
     ac.stroke();
+    // si des tips ont été trouvés : une ligne par tip sur l'A-scan
     if (d.top !== undefined) {
+      // liste de deux paires [profondeur, couleur] ; forEach répète le tracé pour chacune (t = profondeur, c = couleur)
       [[d.top, GREEN], [d.bot, MAG]].forEach(([t, c]) => {
+        // style de la ligne : couleur c, pointillés, épaisseur 1.6
         ac.strokeStyle = c; ac.setLineDash([6, 4]); ac.lineWidth = 1.6;
+        // ligne horizontale sur toute la largeur de l'A-scan, à la profondeur t
         ac.beginPath(); ac.moveTo(0, t * k); ac.lineTo(as.width, t * k); ac.stroke();
       });
+      // remet un trait plein
       ac.setLineDash([]);
     }
-    ac.fillStyle = "#fff"; ac.font = "12px 'Public Sans',sans-serif";
+    // texte blanc, dans la police du site
+    ac.fillStyle = "#fff"; ac.font = "12px 'Plus Jakarta Sans',sans-serif";
+    // titre de l'A-scan en haut à gauche
     ac.fillText("A-scan and envelope", 8, 16);
 
+    // si aucun tip n'est détecté, les deux cases affichent « not detected »
     if (d.top === undefined) { rT.textContent = rB.textContent = "not detected"; }
+    // sinon elles affichent les profondeurs trouvées (textContent = texte contenu dans la balise)
     else { rT.textContent = d.top; rB.textContent = d.bot; }
   };
 
+  // tT et tB : les champs numériques des tips
   const tT = document.getElementById("tipTop"), tB = document.getElementById("tipBot");
+  // clamp(v, a, b) : borne la valeur v entre a (minimum) et b (maximum)
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  // upd : appelée quand on valide un champ ; parseInt convertit le texte en entier (NaN si le champ est vide)
   const upd = () => { const t = parseInt(tT.value, 10), b = parseInt(tB.value, 10);
+    // tip haut borné entre 200 et 480 ; tip bas entre T1 + 30 et 510 ; si la saisie est invalide on garde l'ancienne valeur
     T1 = clamp(isNaN(t) ? T1 : t, 200, 480); T2 = clamp(isNaN(b) ? T2 : b, T1 + 30, 510);
+    // réécrit les valeurs corrigées dans les champs, puis régénère les données (build), repeint l'image (paint) et redessine (draw)
     tT.value = T1; tB.value = T2; build(); paint(); draw(); };
+  // quand on valide un champ (Entrée ou clic ailleurs), appelle upd
   tT.addEventListener("change", upd); tB.addEventListener("change", upd);
+  // quand on déplace le curseur, redessine en direct
   pos.addEventListener("input", draw);
+  // premier dessin au chargement de la page
   draw();
+  // écrit l'année en cours dans le pied de page
   document.getElementById("year").textContent = new Date().getFullYear();
+// ferme la fonction enveloppe et l'exécute
 })();
 </script>
-<script>const io=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}}),{threshold:.15});document.querySelectorAll('.rv').forEach(el=>io.observe(el));</script>
-</body></html>
+<!--apparition au défilement : IntersectionObserver prévient quand un élément .rv entre à l'écran (15% visible) ; on lui ajoute la classe in, qui lance l'animation CSS, puis on arrête de l'observer ; querySelectorAll retrouve tous les .rv-->
 <script>const io=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}}),{threshold:.15});document.querySelectorAll('.rv').forEach(el=>io.observe(el));</script>
 </body></html>
