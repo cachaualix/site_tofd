@@ -160,20 +160,26 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 .codelink small{font-weight:600;color:var(--muted)}
 .codelink:hover{border-color:var(--brand);color:var(--brand)}
 /* sans bandeau d'accueil, la première section laisse plus de place sous le menu fixe (pour le bouton code) */
-body.no-hero main>section.firstvis{padding-top:150px}
+body.no-hero main>section.firstvis{padding-top:72px}
 /* texte long + figures : on aligne en haut (le centrage laissait un grand vide au-dessus de la figure) */
 .step.split{align-items:start}
-/* fil d'Ariane et boutons précédent / suivant des pages d'étapes */
+/* fil d'Ariane (Home › Method › Cluster) en haut de chaque page sauf Home : juste sous le menu fixe ; le dernier élément (page en cours) n'est pas un lien */
+.crumbs{padding-top:104px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.92rem;font-weight:600;color:var(--muted)}
+.crumbs a{color:var(--muted);text-decoration:none}.crumbs a:hover{color:var(--brand);text-decoration:underline}
+.crumbs [aria-current]{color:var(--ink)}.crumbs .sep{opacity:.5}
+/* liste des limites */
+.limlist{margin:0 0 1.2em;padding-left:1.2em;color:#6B5B1E;max-width:80ch}.limlist li{margin-bottom:.7em}.limlist b{color:#4d3f12}
+/* boutons précédent / suivant des pages d'étapes */
 .crumb{margin-bottom:8px}
 .stepnav{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:44px}
-.crumb a,.stepnav a{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:.55em 1.25em;font-weight:700;font-size:.92rem;color:var(--ink);text-decoration:none}
-.crumb a:hover,.stepnav a:hover{border-color:var(--brand);color:var(--brand)}
+.stepnav a{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:.55em 1.25em;font-weight:700;font-size:.92rem;color:var(--ink);text-decoration:none}
+.stepnav a:hover{border-color:var(--brand);color:var(--brand)}
 /* lien du menu de la page en cours */
 .nav nav>a.on,.nav nav .dd>a.on{color:var(--ink);box-shadow:inset 0 -2px 0 var(--brand)}
 /* effet d'apparition au défilement : sans JavaScript tout reste visible */
 .js .rv{opacity:0;transform:translateY(26px);transition:opacity .8s,transform .8s}.js .rv.in{opacity:1;transform:none}
 /* écran de 820px ou moins : une colonne ; les menus déroulants (qui demandent une souris) sont masqués, seul le bouton reste ; le nom du fichier du bouton code disparaît */
-@media(max-width:820px){.split,.demo-grid,.viewer-grid,.controls{grid-template-columns:1fr}.flip>:first-child{order:0}.step{margin-top:72px}.nav nav a:not(.btn){display:none}.nav nav .dd{display:none}.hero{padding:140px 0 190px;border-radius:0 0 36px 36px}section{padding:72px 0}body.no-hero main>section.firstvis{padding-top:130px}.limits{padding:28px}}
+@media(max-width:820px){.split,.demo-grid,.viewer-grid,.controls{grid-template-columns:1fr}.flip>:first-child{order:0}.step{margin-top:72px}.nav nav a:not(.btn){display:none}.nav nav .dd{display:none}.hero{padding:140px 0 190px;border-radius:0 0 36px 36px}section{padding:72px 0}body.no-hero main>section.firstvis{padding-top:64px}.limits{padding:28px}}
 /* visiteur qui demande moins d'animations : tout est visible tout de suite */
 @media(prefers-reduced-motion:reduce){.js .rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}.card,.btn,.menu{transition:none}}
 </style>
@@ -185,6 +191,7 @@ body.no-hero main>section.firstvis{padding-top:150px}
     - Simulation : bulle avec A-scan / B-scan (data-tab dit au JS quel onglet ouvrir)
     Les href="#…" correspondent aux id des sections plus bas-->
 <div class="nav"><a class="logo" href="#">TOFD</a><nav aria-label="Navigation">
+  <a href="#home">Home</a>
   <div class="dd"><a href="#tip-extraction">Tip extraction</a>
     <div class="menu">
       <div class="dd sub"><a href="#methode">Method</a>
@@ -212,8 +219,8 @@ body.no-hero main>section.firstvis{padding-top:150px}
   <a class="btn" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Open the app</a>
 </nav></div>
 
-<!--bandeau d'accueil = début de la catégorie « Tip extraction » (id="tip-extraction") ; data-sec dit au JS à quel script cette zone correspond-->
-<header class="hero" id="tip-extraction" data-sec="tip-extraction" data-view="tip-extraction"><div class="wrap">
+<!--bandeau d'accueil = page « home » (id="home") ; la page Home contient : ce bandeau, le principe du TOFD, ce qui est disponible, les limites et l'accès à l'app ; data-sec dit au JS à quel script cette zone correspond-->
+<header class="hero" id="home" data-sec="home" data-view="home"><div class="wrap">
 <span class="badge">STG2 project · Non-destructive testing</span>
 <h1>Find the tips of a TOFD defect automatically</h1>
 <p>A Python pipeline denoises your B-scan, detects the upper and lower diffraction echoes, then checks every result against the raw signal.</p>
@@ -221,14 +228,14 @@ body.no-hero main>section.firstvis{padding-top:150px}
 </div></header>
 <main>
 <!--carte de la démo (B-scan à gauche, A-scan à droite, commandes et résultats dessous) -->
-<div class="wrap" data-sec="demo" data-view="tip-extraction"><figure class="demo" style="margin-bottom:0">
-<div class="demo-grid"><canvas id="bscan" width="720" height="440" role="img" aria-label="Simulated B-scan with the two defect tips"></canvas><canvas id="ascan" width="220" height="440" role="img" aria-label="A-scan at the chosen position"></canvas></div>
+<!--page « Tip extraction » : titre + démo sur le vrai B-scan data_1 (la simulation, avec le choix des tips, est sur la page Simulation)-->
+<section id="tip-extraction" data-view="tip-extraction"><div class="wrap center rv"><h2>Tip extraction</h2><p>Find the upper and lower tips of a defect on a real B-scan, then follow the method step by step.</p><p><a class="btn" href="#methode">Read the method</a></p></div>
+<div class="wrap" data-sec="demo" style="margin-top:40px"><figure class="demo" style="margin:0">
+<div class="demo-grid"><canvas id="bscan" width="720" height="440" role="img" aria-label="B-scan with the two defect tips"></canvas><canvas id="ascan" width="220" height="440" role="img" aria-label="A-scan at the chosen position"></canvas></div>
 <div class="controls"><label for="pos">Move the probe: A-scan <output id="posOut">180</output></label><input id="pos" type="range" min="0" max="359" value="180">
-<label for="tipTop" class="sim-only">Top tip (sample, 200 to 480)</label><input id="tipTop" class="num sim-only" type="number" min="200" max="480" step="1" value="380" inputmode="numeric">
-<label for="tipBot" class="sim-only">Bottom tip (sample, 230 to 510)</label><input id="tipBot" class="num sim-only" type="number" min="230" max="510" step="1" value="490" inputmode="numeric">
 <dl class="readout"><div><dt><i class="sw top"></i>Top tip</dt><dd id="rTop">—</dd></div><div><dt><i class="sw bot"></i>Bottom tip</dt><dd id="rBot">—</dd></div></dl></div>
-<figcaption id="demoCap">Illustrative simulation: enter the depth of the two tips (confirm with Enter) and the detection adapts. Move the slider to change the probe position. Far from the defect, the echoes are buried in noise and nothing is detected.</figcaption>
-</figure></div>
+<figcaption id="demoCap">Detection on a simulated B-scan (the real B-scan data_1 could not be loaded). Move the slider to change the probe position. Far from the defect, the echoes are buried in noise and nothing is detected.</figcaption>
+</figure></div></section>
 
 <!--section méthode : les 5 cartes ont maintenant un id (step-cluster, step-denoise…) ; les liens du sous-menu y mènent et la carte reçoit un contour cyan grâce à :target-->
 <section id="methode"><div class="wrap center rv" data-sec="methode" data-view="methode"><h2>5 steps, from noisy signal to reliable tip</h2><p>Each step fixes a weakness of the previous one. Click a step to see exactly what the program does and why.</p></div>
@@ -283,7 +290,7 @@ body.no-hero main>section.firstvis{padding-top:150px}
 <p>Restricting the search to the window prevents the huge surface and back-wall echoes from being mistaken for the defect.</p>
 <h4>Main setting</h4>
 <p><code>min_peak_prominence</code>: how much a bump must stand out to count as an echo.</p></div>
-<div class="pane figs"><figure><img src="images/pipeline_result.png" alt="Raw A-scan, denoised A-scan and Hilbert envelope with the detected tips" loading="lazy" onerror="this.closest('figure').hidden=true"><figcaption>A-scan 1 of data_1. Top: raw signal. Middle: denoised signal, with the surface and back-wall waves. Bottom: Hilbert envelope, search window and detected tips.</figcaption></figure></div></article>
+<div class="pane figs"><figure><img src="images/envelope_principle.png" alt="A single echo and two echoes with their Hilbert envelope" loading="lazy" onerror="this.closest('figure').hidden=true"><figcaption>Why the envelope: the raw echo oscillates, the envelope gives one bump per echo and its top is the arrival time (computed on a synthetic example).</figcaption></figure><figure><img src="images/pipeline_result.png" alt="Raw A-scan, denoised A-scan and Hilbert envelope with the detected tips" loading="lazy" onerror="this.closest('figure').hidden=true"><figcaption>A-scan 1 of data_1. Top: raw signal. Middle: denoised signal, with the surface and back-wall waves. Bottom: Hilbert envelope, search window and detected tips.</figcaption></figure></div></article>
 
 <article class="step split rv" id="step-separate" data-sec="step-separate" data-view="step-separate"><div><h3>4 · Separate</h3>
 <p class="lead">When the two tips are close, their bumps overlap and the envelope shows a single lobe: a plain peak search finds only one tip.</p>
@@ -317,13 +324,24 @@ body.no-hero main>section.firstvis{padding-top:150px}
 <div class="pane figs"><figure><img src="images/step5_verification.png" alt="Row intensity profile of the raw B-scan with the two packets and the tips" loading="lazy" onerror="this.closest('figure').hidden=true"><figcaption>data_1: intensity of each row of the raw B-scan, the two packets, and the tips of the pipeline compared with the centre of each packet.</figcaption></figure></div></article>
 </div></section>
 
-<section id="principe" data-sec="principe" data-view="principe"><div class="wrap split">
+<section id="principe" data-sec="principe" data-view="home"><div class="wrap split">
 <div class="rv"><h2>How TOFD works</h2><p>Two ultrasonic probes are placed on either side of a weld: one transmits, the other receives.</p><p>Both tips of a defect diffract the wave and each sends back an echo, between the lateral wave and the back-wall echo. Their arrival time gives the depth of each tip, hence the height of the defect.</p></div>
 <div class="pane rv"><svg viewBox="0 0 360 220" role="img" aria-label="Diagram: transmitting probe, receiving probe and defect">
 <rect x="20" y="50" width="320" height="140" rx="10" class="plate"/><rect x="70" y="30" width="34" height="20" rx="4" class="probe"/><text x="87" y="22" text-anchor="middle">transmitter</text><rect x="256" y="30" width="34" height="20" rx="4" class="probe"/><text x="273" y="22" text-anchor="middle">receiver</text>
 <line x1="180" y1="92" x2="180" y2="146" class="crack"/><path d="M87 50 L180 92 L273 50" class="ray top"/><path d="M87 50 L180 146 L273 50" class="ray bot"/><path d="M87 50 L273 50" class="ray lat"/><path d="M87 50 L180 190 L273 50" class="ray back"/>
 <text x="190" y="90" class="t-top">upper tip</text><text x="190" y="152" class="t-bot">lower tip</text><text x="180" y="66" text-anchor="middle" class="t-mut">lateral wave</text><text x="180" y="208" text-anchor="middle" class="t-mut">back-wall echo</text></svg></div>
 </div></section>
+
+<!--ce qui est disponible sur le site : un lien vers chaque page-->
+<section id="disponible" data-view="home" style="background:#fff"><div class="wrap center rv"><h2>Everything you can explore</h2><p>Each page has its own explanations and a button to read the code behind it.</p></div>
+<div class="wrap"><div class="grid">
+<a class="card rv" href="#tip-extraction"><div class="ico">🎯</div><h3>Tip extraction</h3><p>Find both tips of the defect on the real B-scan data_1 and watch the detection follow the probe.</p></a>
+<a class="card rv" href="#methode"><div class="ico">📚</div><h3>Method</h3><p>The 5 steps of the pipeline, one page each: cluster, denoise, envelope, separate, verify.</p></a>
+<a class="card rv" href="#simulation"><div class="ico">🧪</div><h3>Simulation</h3><p>Choose where the two tips are on a synthetic A-scan or B-scan and see if they are found.</p></a>
+<a class="card rv" href="#denoising"><div class="ico">🧹</div><h3>B-scan denoising</h3><p>Step 2 on its own: one autoencoder per group of A-scans.</p></a>
+<a class="card rv" href="#animation"><div class="ico">🎞️</div><h3>B-scan animation</h3><p>Move the probe along the real B-scan and watch the A-scan change.</p></a>
+<a class="card rv" href="#app"><div class="ico">🚀</div><h3>The app</h3><p>Upload your own B-scan in the Streamlit app and set every parameter.</p></a>
+</div></div></section>
 
 <section id="app" data-sec="app" data-view="app" style="background:#fff"><div class="wrap center rv"><h2>What the app does</h2><p>A Streamlit interface to test your own B-scans.</p></div>
 <div class="wrap"><div class="grid">
@@ -335,12 +353,17 @@ body.no-hero main>section.firstvis{padding-top:150px}
 <div class="card rv"><div class="ico">📂</div><h3>Your own data</h3><p>Upload a B-scan image, or run the simulated demo.</p></div>
 </div></div></section>
 
-<section id="limites" data-sec="limites" data-view="limites"><div class="wrap"><div class="limits rv"><h2>What the tool does not claim to do</h2>
-<p style="color:#6B5B1E;max-width:70ch">When the two tips are very close, their echoes merge in the envelope. The tool flags it (“tips merged”) instead of inventing a second peak, and the fallback detection requires a visual check.</p>
+<section id="limites" data-sec="limites" data-view="home"><div class="wrap"><div class="limits rv"><h2>What this work does not claim to do</h2>
+<ul class="limlist">
+<li><b>Tips very close to each other.</b> Their echoes merge in the envelope. The pipeline flags it (“tips merged”) instead of inventing a second peak, and a tip found by the fallback separation needs a visual check. If the raw B-scan also shows a single lobe, the verification cannot judge each tip separately.</li>
+<li><b>Denoising.</b> The autoencoders are trained only on the A-scans of the B-scan being analysed, with random mini-batches and no pre-trained model. The result depends on the number of groups and on the training, which is why the raw signal is always used for the final check.</li>
+<li><b>The demos on this site.</b> They run a simplified version of the detection in your browser (Hilbert envelope and peak search, no denoising). The Python pipeline and the Streamlit app are the reference. The Simulation page uses synthetic data and is only an illustration.</li>
+<li><b>One example.</b> The real results shown here come from a single B-scan, data_1.</li>
+</ul>
 <p style="color:#6B5B1E;max-width:70ch;margin:0">Idea under consideration: sparse deconvolution (matching pursuit) to separate overlapping echoes.</p></div></div></section>
 
 <!--NOUVELLE CATÉGORIE : Simulation. Deux onglets (A-scan / B-scan) ; le menu du haut ouvre directement le bon onglet. Les données sont celles de la démo du haut-->
-<section id="simulation" data-sec="simulation" data-view="simulation" style="background:#fff"><div class="wrap center rv"><h2>Simulation</h2><p>Look at the synthetic signal the demo is built on, either as a single A-scan or as a full B-scan.</p></div>
+<section id="simulation" data-sec="simulation" data-view="simulation" style="background:#fff"><div class="wrap center rv"><h2>Simulation</h2><p>Choose where the two tips are on a synthetic signal, either as a full B-scan or as a single A-scan, and see whether the detection finds them.</p></div>
 <div class="wrap rv" style="margin-top:40px"><div class="panel">
   <div class="tabs" role="tablist" aria-label="Signal type">
     <button type="button" role="tab" id="tabA" aria-controls="sim-ascan" aria-selected="false">A-scan</button>
@@ -348,8 +371,11 @@ body.no-hero main>section.firstvis{padding-top:150px}
   </div>
   <div id="sim-bscan" role="tabpanel" aria-labelledby="tabB"><canvas id="simB" width="720" height="440" role="img" aria-label="Simulated B-scan"></canvas></div>
   <div id="sim-ascan" role="tabpanel" aria-labelledby="tabA" hidden><div class="sim-a"><canvas id="simA" width="300" height="440" role="img" aria-label="Simulated A-scan with its envelope"></canvas></div></div>
-  <div class="controls"><label for="simPos">Probe position: A-scan <output id="simOut">180</output></label><input id="simPos" type="range" min="0" max="359" value="180"></div>
-  <p class="cap">A B-scan is a stack of A-scans: each column is one probe position, each row one depth sample. The A-scan view shows a single column with its envelope in orange.</p>
+  <div class="controls"><label for="simPos">Probe position: A-scan <output id="simOut">180</output></label><input id="simPos" type="range" min="0" max="359" value="180">
+  <label for="tipTop">Top tip (sample, 200 to 480)</label><input id="tipTop" class="num" type="number" min="200" max="480" step="1" value="380" inputmode="numeric">
+  <label for="tipBot">Bottom tip (sample, 230 to 510)</label><input id="tipBot" class="num" type="number" min="230" max="510" step="1" value="490" inputmode="numeric">
+  <dl class="readout"><div><dt><i class="sw top"></i>Top tip found</dt><dd id="simTop">—</dd></div><div><dt><i class="sw bot"></i>Bottom tip found</dt><dd id="simBot">—</dd></div></dl></div>
+  <p class="cap">Enter the depth of the two tips (confirm with Enter) and the detection adapts. A B-scan is a stack of A-scans: each column is one probe position, each row one depth sample. The A-scan view shows a single column with its envelope in orange; the green and magenta dashed lines are the tips found. Far from the defect, the echoes are buried in noise and nothing is detected.</p>
 </div></div></section>
 
 <!--NOUVELLE CATÉGORIE : Denoising. Texte seulement pour l'instant ; ajoute plus tard une figure avant/après exportée depuis ton script Python-->
@@ -368,7 +394,7 @@ body.no-hero main>section.firstvis{padding-top:150px}
   <p class="cap"><span id="anNote">Simulated B-scan.</span> Click and drag on the B-scan to move the probe, or click it and use the arrow keys, Home and End.</p>
 </div></div></section>
 
-<section data-sec="app" data-view="tip-extraction app" style="padding-top:72px"><div class="wrap"><div class="final rv"><h2>Try it on a B-scan</h2><p>Without a file, the app uses a simulated B-scan so you can explore.</p><a class="btn light" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Open the app</a></div></div></section>
+<section data-sec="app" data-view="home app" style="padding-top:72px"><div class="wrap"><div class="final rv"><h2>Try it on a B-scan</h2><p>Without a file, the app uses a simulated B-scan so you can explore.</p><a class="btn light" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Open the app</a></div></div></section>
 </main>
 <footer class="wrap"><span>STG2 project · <span id="year"></span> · Python, PyTorch, scikit-learn, SciPy, Streamlit</span><a href="https://github.com/cachaualix" target="_blank" rel="noreferrer">github.com/cachaualix</a></footer>
 
@@ -609,8 +635,8 @@ body.no-hero main>section.firstvis{padding-top:150px}
   const bs = document.getElementById("bscan"), as = document.getElementById("ascan");
   const pos = document.getElementById("pos"), out = document.getElementById("posOut");
   const rT = document.getElementById("rTop"), rB = document.getElementById("rBot");
-  // simOnly : les champs de profondeur des tips (utiles seulement pour le B-scan simulé) ; demoCap : la légende de la démo
-  const simOnly = document.querySelectorAll(".sim-only"), demoCap = document.getElementById("demoCap");
+  // demoCap : la légende de la démo
+  const demoCap = document.getElementById("demoCap");
   const draw = () => {
     const x = +pos.value, d = DS.real ? detectReal(x, DS) : detectSyn(x);
     out.textContent = x;
@@ -619,10 +645,9 @@ body.no-hero main>section.firstvis{padding-top:150px}
     if (d.top === undefined) { rT.textContent = rB.textContent = "not detected"; }
     else { rT.textContent = d.top; rB.textContent = d.bot !== undefined ? d.bot : "merged"; }
   };
-  // useReal : bascule la démo du haut sur le vrai B-scan (appelée une fois l'image chargée) ; on cache les champs des tips simulés et on change la légende
+  // useReal : bascule la démo du haut sur le vrai B-scan (appelée une fois l'image chargée) ; on change la légende
   const useReal = ds => {
     DS = ds; pos.max = ds.W - 1; pos.value = Math.min(1, ds.W - 1);
-    simOnly.forEach(el => { el.hidden = true; });
     demoCap.textContent = "Detection on the real B-scan data_1, with a simplified version of the pipeline running in your browser: Hilbert envelope and peak search, without the denoising step. Move the slider to change the A-scan. Where the echoes fade away, nothing is detected.";
     draw();
   };
@@ -632,10 +657,13 @@ body.no-hero main>section.firstvis{padding-top:150px}
   const simPos = document.getElementById("simPos"), simOut = document.getElementById("simOut");
   const tabA = document.getElementById("tabA"), tabB = document.getElementById("tabB");
   const panA = document.getElementById("sim-ascan"), panB = document.getElementById("sim-bscan");
-  // drawSim : redessine le canvas de la simulation (sans lignes de tips : ici on montre juste le signal)
+  // drawSim : redessine la simulation (B-scan et A-scan simulés) avec les tips trouvés par la détection ; simTop et simBot affichent leurs profondeurs
+  const simTop = document.getElementById("simTop"), simBot = document.getElementById("simBot");
   const drawSim = () => {
-    const x = +simPos.value; simOut.textContent = x;
-    drawB(simB, x, null, SYN); drawA(simA, x, detectSyn(x), false, SYN);
+    const x = +simPos.value, d = detectSyn(x); simOut.textContent = x;
+    drawB(simB, x, d, SYN); drawA(simA, x, d, true, SYN);
+    if (d.top === undefined) { simTop.textContent = simBot.textContent = "not detected"; }
+    else { simTop.textContent = d.top; simBot.textContent = d.bot; }
   };
   // setTab("a" ou "b") : coche le bon onglet (aria-selected) et n'affiche que son panneau (hidden)
   const setTab = t => {
@@ -644,7 +672,7 @@ body.no-hero main>section.firstvis{padding-top:150px}
     panA.hidden = !a; panB.hidden = a;
   };
   tabA.addEventListener("click", () => setTab("a")); tabB.addEventListener("click", () => setTab("b"));
-  // les liens A-scan / B-scan du menu du haut : on ouvre l'onglet voulu ; le navigateur défile ensuite tout seul vers #simulation
+  // les liens A-scan / B-scan du menu du haut : on ouvre l'onglet voulu (la page Simulation s'affiche grâce au routeur)
   document.querySelectorAll("[data-tab]").forEach(l => l.addEventListener("click", () => setTab(l.dataset.tab)));
   simPos.addEventListener("input", drawSim);
 
@@ -781,7 +809,7 @@ body.no-hero main>section.firstvis{padding-top:150px}
 
   // ---------- « Pages » dans le même onglet (routeur par l'adresse #…) ----------
   // Chaque bloc de la page porte un attribut data-view = la « page » où il s'affiche (plusieurs pages possibles, séparées par des espaces). Quand l'adresse change (clic sur un lien #xxx, boutons précédent/suivant du navigateur), on cache tous les blocs qui ne sont pas de la page demandée. Sans JavaScript, tout reste affiché
-  const DEFAULT_VIEW = "tip-extraction";
+  const DEFAULT_VIEW = "home";
   const STEPS = ["step-cluster", "step-denoise", "step-envelope", "step-separate", "step-verify"];
 
   // viewOf(id) : la page qui contient l'élément d'id donné (une section sans data-view prend la page de son premier bloc)
@@ -800,7 +828,6 @@ body.no-hero main>section.firstvis{padding-top:150px}
     const next = i < STEPS.length - 1 ? ["#" + STEPS[i + 1], title(STEPS[i + 1]) + " →"] : ["#methode", "Back to the 5 steps"];
     const mk = (tag, cls, html) => { const e = document.createElement(tag); e.className = cls; e.dataset.view = id; e.innerHTML = html; return e; };
     const link = ([href, text]) => { const a = document.createElement("a"); a.href = href; a.textContent = text; return a.outerHTML; };
-    art.before(mk("div", "crumb", link(["#methode", "← Method: the 5 steps"])));
     art.after(mk("nav", "stepnav", link(prev) + link(next)));
   });
 
@@ -808,7 +835,7 @@ body.no-hero main>section.firstvis{padding-top:150px}
   const seen = new Set();
   document.querySelectorAll("[data-sec]").forEach(el => {
     const k = el.dataset.sec, f = CODE[k];
-    if (!f || seen.has(k) || k === "tip-extraction") return;
+    if (!f || seen.has(k) || k === "home") return;
     seen.add(k);
     const host = el.matches("section") ? (el.querySelector(".wrap") || el) : el;
     host.classList.add("hasCode");
@@ -819,6 +846,8 @@ body.no-hero main>section.firstvis{padding-top:150px}
   });
 
   // showView(v) : affiche la page v. Une section dont aucun bloc n'est visible est cachée aussi (sinon son espace vide resterait) ; la première section visible reçoit plus d'espace en haut quand il n'y a pas de bandeau sous le menu
+  const crumbs = document.createElement("nav"); crumbs.className = "crumbs wrap"; crumbs.setAttribute("aria-label", "Breadcrumb");
+  document.querySelector("main").prepend(crumbs);
   const showView = v => {
     document.querySelectorAll("[data-view]").forEach(e => { e.hidden = !e.dataset.view.split(" ").includes(v); });
     let first = true;
@@ -828,15 +857,28 @@ body.no-hero main>section.firstvis{padding-top:150px}
       if (!sec.hidden) first = false;
     });
     document.body.classList.toggle("no-hero", v !== DEFAULT_VIEW);
-    // lien du menu « en cours » souligné : les pages de la méthode comptent pour Tip extraction
-    const group = (v === "methode" || v.startsWith("step-") || v === "principe" || v === "app" || v === "limites") ? "tip-extraction" : v;
+    // fil d'Ariane : Home › page (ou Home › Method › étape) ; chaque élément sauf le dernier est un lien ; caché sur Home
+    const NAMES = { "tip-extraction": "Tip extraction", methode: "Method", simulation: "Simulation", denoising: "B-scan denoising", animation: "B-scan animation", app: "App" };
+    const trail = [["Home", "#home"]];
+    if (v.startsWith("step-")) { trail.push(["Method", "#methode"]); trail.push([document.querySelector("#" + v + " h3").textContent.split("·").pop().trim(), null]); }
+    else if (v !== DEFAULT_VIEW) trail.push([NAMES[v] || v, null]);
+    crumbs.hidden = v === DEFAULT_VIEW;
+    crumbs.replaceChildren();
+    trail.forEach(([label, href], i) => {
+      if (i) { const sep = document.createElement("span"); sep.className = "sep"; sep.textContent = "›"; sep.setAttribute("aria-hidden", "true"); crumbs.append(sep); }
+      const e = document.createElement(href ? "a" : "span"); e.textContent = label;
+      if (href) e.href = href; else e.setAttribute("aria-current", "page");
+      crumbs.append(e);
+    });
+    // lien du menu « en cours » souligné : les pages de la méthode et l'app comptent pour Tip extraction
+    const group = (v === "methode" || v.startsWith("step-") || v === "app") ? "tip-extraction" : v;
     document.querySelectorAll(".nav nav a").forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + group));
   };
 
   // place la page : en haut, sauf #donnees qui amène sur son bloc. Le navigateur essaie aussi de défiler lui-même vers un lien dès que sa cible devient visible : on remet donc la position une seconde fois à l'image suivante
   const place = id => {
     const go = () => {
-      const t = id === "donnees" ? document.getElementById(id) : null;
+      const t = ["donnees", "principe", "limites", "disponible"].includes(id) ? document.getElementById(id) : null;
       if (t) t.scrollIntoView({ behavior: "instant" }); else window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     };
     go(); requestAnimationFrame(() => requestAnimationFrame(go));
