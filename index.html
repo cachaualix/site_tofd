@@ -152,15 +152,28 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 
 /* ===== BOUTON « VIEW CODE » flottant (nouveau) ===== */
 /* collé en bas à droite de l'écran (fixed) ; invisible tant qu'aucune section n'est active ; la classe on le fait apparaître ; le JS change son lien selon la section à l'écran */
-.codebtn{position:fixed;right:20px;bottom:20px;z-index:10;display:none;align-items:center;gap:.7em;background:var(--ink);color:#fff;text-decoration:none;font-weight:700;font-size:.9rem;padding:.75em 1.3em;border-radius:999px;box-shadow:0 14px 30px -10px rgba(15,23,42,.6)}
-.codebtn.on{display:inline-flex}
-.codebtn small{font-weight:600;opacity:.65}
-.codebtn:hover{background:var(--brand)}
 
+/* ===== PAGES ET ACCÈS AU CODE (nouveau) ===== */
+/* .hasCode : bloc qui porte un bouton « View code » (position:relative = repère du bouton absolu) ; .codelink : le bouton, collé en haut à droite du bloc, dans l'espace libre au-dessus */
+.hasCode{position:relative}
+.codelink{position:absolute;top:-46px;right:0;z-index:2;display:inline-flex;align-items:center;gap:.6em;background:#fff;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-weight:700;font-size:.85rem;padding:.45em 1.1em;border-radius:999px;box-shadow:0 8px 24px -12px rgba(15,23,42,.35)}
+.codelink small{font-weight:600;color:var(--muted)}
+.codelink:hover{border-color:var(--brand);color:var(--brand)}
+/* sans bandeau d'accueil, la première section laisse plus de place sous le menu fixe (pour le bouton code) */
+body.no-hero main>section.firstvis{padding-top:150px}
+/* texte long + figures : on aligne en haut (le centrage laissait un grand vide au-dessus de la figure) */
+.step.split{align-items:start}
+/* fil d'Ariane et boutons précédent / suivant des pages d'étapes */
+.crumb{margin-bottom:8px}
+.stepnav{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:44px}
+.crumb a,.stepnav a{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:.55em 1.25em;font-weight:700;font-size:.92rem;color:var(--ink);text-decoration:none}
+.crumb a:hover,.stepnav a:hover{border-color:var(--brand);color:var(--brand)}
+/* lien du menu de la page en cours */
+.nav nav>a.on,.nav nav .dd>a.on{color:var(--ink);box-shadow:inset 0 -2px 0 var(--brand)}
 /* effet d'apparition au défilement : sans JavaScript tout reste visible */
 .js .rv{opacity:0;transform:translateY(26px);transition:opacity .8s,transform .8s}.js .rv.in{opacity:1;transform:none}
 /* écran de 820px ou moins : une colonne ; les menus déroulants (qui demandent une souris) sont masqués, seul le bouton reste ; le nom du fichier du bouton code disparaît */
-@media(max-width:820px){.split,.demo-grid,.viewer-grid,.controls{grid-template-columns:1fr}.flip>:first-child{order:0}.step{margin-top:72px}.nav nav a:not(.btn){display:none}.nav nav .dd{display:none}.hero{padding:140px 0 190px;border-radius:0 0 36px 36px}section{padding:72px 0}.limits{padding:28px}.codebtn small{display:none}}
+@media(max-width:820px){.split,.demo-grid,.viewer-grid,.controls{grid-template-columns:1fr}.flip>:first-child{order:0}.step{margin-top:72px}.nav nav a:not(.btn){display:none}.nav nav .dd{display:none}.hero{padding:140px 0 190px;border-radius:0 0 36px 36px}section{padding:72px 0}body.no-hero main>section.firstvis{padding-top:130px}.limits{padding:28px}}
 /* visiteur qui demande moins d'animations : tout est visible tout de suite */
 @media(prefers-reduced-motion:reduce){.js .rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}.card,.btn,.menu{transition:none}}
 </style>
@@ -200,7 +213,7 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 </nav></div>
 
 <!--bandeau d'accueil = début de la catégorie « Tip extraction » (id="tip-extraction") ; data-sec dit au JS à quel script cette zone correspond-->
-<header class="hero" id="tip-extraction" data-sec="tip-extraction"><div class="wrap">
+<header class="hero" id="tip-extraction" data-sec="tip-extraction" data-view="tip-extraction"><div class="wrap">
 <span class="badge">STG2 project · Non-destructive testing</span>
 <h1>Find the tips of a TOFD defect automatically</h1>
 <p>A Python pipeline denoises your B-scan, detects the upper and lower diffraction echoes, then checks every result against the raw signal.</p>
@@ -208,7 +221,7 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 </div></header>
 <main>
 <!--carte de la démo (B-scan à gauche, A-scan à droite, commandes et résultats dessous) -->
-<div class="wrap" data-sec="demo"><figure class="demo" style="margin-bottom:0">
+<div class="wrap" data-sec="demo" data-view="tip-extraction"><figure class="demo" style="margin-bottom:0">
 <div class="demo-grid"><canvas id="bscan" width="720" height="440" role="img" aria-label="Simulated B-scan with the two defect tips"></canvas><canvas id="ascan" width="220" height="440" role="img" aria-label="A-scan at the chosen position"></canvas></div>
 <div class="controls"><label for="pos">Move the probe: A-scan <output id="posOut">180</output></label><input id="pos" type="range" min="0" max="359" value="180">
 <label for="tipTop" class="sim-only">Top tip (sample, 200 to 480)</label><input id="tipTop" class="num sim-only" type="number" min="200" max="480" step="1" value="380" inputmode="numeric">
@@ -218,8 +231,8 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 </figure></div>
 
 <!--section méthode : les 5 cartes ont maintenant un id (step-cluster, step-denoise…) ; les liens du sous-menu y mènent et la carte reçoit un contour cyan grâce à :target-->
-<section id="methode"><div class="wrap center rv" data-sec="methode"><h2>5 steps, from noisy signal to reliable tip</h2><p>Each step fixes a weakness of the previous one. Click a step to see exactly what the program does and why.</p></div>
-<div class="wrap" data-sec="methode"><div class="grid steps">
+<section id="methode"><div class="wrap center rv" data-sec="methode" data-view="methode"><h2>5 steps, from noisy signal to reliable tip</h2><p>Each step fixes a weakness of the previous one. Click a step to see exactly what the program does and why.</p></div>
+<div class="wrap" data-sec="methode" data-view="methode"><div class="grid steps">
 <a class="card rv" href="#step-cluster"><div class="ico">1</div><h3>Cluster</h3><p>A k-means groups similar A-scans together.</p></a>
 <a class="card rv" href="#step-denoise"><div class="ico">2</div><h3>Denoise</h3><p>One autoencoder per group, trained on mini-batches of 5 A-scans.</p></a>
 <a class="card rv" href="#step-envelope"><div class="ico">3</div><h3>Envelope</h3><p>The Hilbert envelope reveals the peaks that stand out enough.</p></a>
@@ -228,13 +241,13 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 </div></div>
 
 <div class="wrap">
-<article class="step split rv" id="donnees" data-sec="donnees"><div><h3>The data: data_1</h3>
+<article class="step split rv" id="donnees" data-sec="donnees" data-view="methode"><div><h3>The data: data_1</h3>
 <p class="lead">The example B-scan is a picture of 96 columns and 176 rows. Each column is one A-scan (one probe position), each row one depth sample.</p>
 <p>The program turns grey levels into amplitudes: mid-grey (127.5) means zero, black is −1 and white is +1. Three zones stand out:</p>
 <ul class="facts"><li><b>Around row 25</b>: the lateral (surface) wave, nearly identical on every column.</li><li><b>Rows 70 to 90</b>: the two diffraction echoes of the defect. Strong on the left columns, fading away towards the right.</li><li><b>Rows 140 to 160</b>: the back-wall echo, so strong that it saturates at ±1.</li></ul></div>
 <div class="pane figs"><figure><img src="images/data1_bscan.png" alt="B-scan data_1 and the first A-scan" loading="lazy" onerror="this.closest('figure').hidden=true"><figcaption>data_1 in the viewer of the program. Left: the B-scan with the selected column in red. Right: the A-scan of that column.</figcaption></figure></div></article>
 
-<article class="step split flip rv" id="step-cluster" data-sec="step-cluster"><div><h3>1 · Cluster</h3>
+<article class="step split flip rv" id="step-cluster" data-sec="step-cluster" data-view="step-cluster"><div><h3>1 · Cluster</h3>
 <p class="lead">Not all A-scans look alike: on data_1 the echoes of the defect are clear on the left and almost gone on the right. The first step sorts the A-scans into groups of similar signals.</p>
 <h4>What the program does</h4>
 <ul class="facts"><li>Each A-scan is <b>centred</b> (its median is subtracted) and <b>divided by its largest absolute value</b>, so every signal lies between −1 and 1. Groups then depend on the shape of the signal, not on its strength.</li><li>A <b>k-means</b> (scikit-learn, 10 restarts, fixed seed) assigns every A-scan to one of <code>n_clusters</code> groups. The main script uses 3.</li><li>The offset and scale of each A-scan are kept, to restore the original amplitudes after denoising.</li></ul>
@@ -244,7 +257,7 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 <p><code>n_clusters</code>: too few and different signals get mixed; too many and some groups have only a handful of A-scans to learn from.</p></div>
 <div class="pane figs"><figure><img src="images/step1_clusters.png" alt="Clusters of A-scans on data_1" loading="lazy" onerror="this.closest('figure').hidden=true"><figcaption>data_1: B-scan with the cluster of each column (coloured strip), and the average normalised A-scan of each cluster.</figcaption></figure></div></article>
 
-<article class="step split rv" id="step-denoise" data-sec="step-denoise"><div><h3>2 · Denoise</h3>
+<article class="step split rv" id="step-denoise" data-sec="step-denoise" data-view="step-denoise"><div><h3>2 · Denoise</h3>
 <p class="lead">Noise is random, echoes are not: the same echo shape appears in every A-scan of a group. An autoencoder is a small network that learns exactly that.</p>
 <h4>What the program does</h4>
 <ul class="facts"><li><b>One autoencoder per cluster</b>: a linear layer with a ReLU compresses each A-scan into 20 values, a second linear layer rebuilds the full A-scan from them.</li><li><b>Training</b> on mini-batches of 5 random A-scans of the cluster, 2000 iterations by default (1500 in the main script), with the Adam optimiser: the learning rate starts at 0.001 and shrinks by 0.1 % at every iteration.</li><li>The <b>loss</b> is 90 % reconstruction error and 10 % penalty on the size of the weights, which keeps the network simple and stops it from copying the noise.</li><li>The weights kept at the end are a <b>running average</b> (decay 0.99) of those seen during training, more stable than the last step alone.</li><li>The output is rescaled with the stored offsets and scales. The <b>raw signal is kept untouched</b>, for step 5.</li></ul>
@@ -262,7 +275,7 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 <text x="80" y="20" text-anchor="middle" class="t-mut">noisy A-scan</text><text x="280" y="20" text-anchor="middle" class="t-mut">denoised A-scan</text>
 <text x="80" y="180" text-anchor="middle" class="t-mut">encoder</text><text x="180" y="140" text-anchor="middle" class="t-mut">only what the group shares</text><text x="280" y="180" text-anchor="middle" class="t-mut">decoder</text></svg><figcaption>Principle of the autoencoder used for each group of A-scans.</figcaption></figure><figure><img src="images/step2_denoising.png" alt="Raw and denoised B-scan of data_1" loading="lazy" onerror="this.closest('figure').hidden=true"><figcaption>data_1 before and after denoising, and one A-scan in both versions.</figcaption></figure></div></article>
 
-<article class="step split flip rv" id="step-envelope" data-sec="step-envelope"><div><h3>3 · Envelope</h3>
+<article class="step split flip rv" id="step-envelope" data-sec="step-envelope" data-view="step-envelope"><div><h3>3 · Envelope</h3>
 <p class="lead">A raw echo oscillates between positive and negative lobes, so its maximum is not a good arrival time. The Hilbert envelope gives one smooth bump per echo, and the top of the bump is the arrival time.</p>
 <h4>What the program does</h4>
 <ul class="facts"><li><b>Surface and back-wall waves first</b>: the mean amplitude at each depth is computed over all A-scans and smoothed; every stretch above 20 % of the maximum is marked. The first stretch is the surface wave, the last one the back-wall wave. On data_1: samples 24 to 33 and 139 to 162.</li><li>The <b>search window</b> is what lies between them: samples 34 to 138 here.</li><li>Unless you choose one, the program picks the <b>best A-scan</b>: among the 15 most energetic ones, the one with the most reliable peaks.</li><li>The <b>envelope</b> is the absolute value of the analytic signal (Hilbert transform). Peaks are searched inside the window; they must stand out by at least 10 % of the highest value and be at least 3 samples apart.</li><li>On A-scan 1 of data_1, the two tips are found at samples 74 and 86.</li></ul>
@@ -272,7 +285,7 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 <p><code>min_peak_prominence</code>: how much a bump must stand out to count as an echo.</p></div>
 <div class="pane figs"><figure><img src="images/pipeline_result.png" alt="Raw A-scan, denoised A-scan and Hilbert envelope with the detected tips" loading="lazy" onerror="this.closest('figure').hidden=true"><figcaption>A-scan 1 of data_1. Top: raw signal. Middle: denoised signal, with the surface and back-wall waves. Bottom: Hilbert envelope, search window and detected tips.</figcaption></figure></div></article>
 
-<article class="step split rv" id="step-separate" data-sec="step-separate"><div><h3>4 · Separate</h3>
+<article class="step split rv" id="step-separate" data-sec="step-separate" data-view="step-separate"><div><h3>4 · Separate</h3>
 <p class="lead">When the two tips are close, their bumps overlap and the envelope shows a single lobe: a plain peak search finds only one tip.</p>
 <h4>What the program does</h4>
 <ul class="facts"><li>It takes the top of the lobe (amplitude <b>A</b>) and draws a <b>band</b> between 0.85 A and A.</li><li>It walks left and right until the curve <b>leaves the band</b>: this delimits the zone of the first peak.</li><li>Outside this zone, it looks for a <b>second true local maximum</b>, no further than the half-height width of the lobe (50 samples at most), and at least 30 % as high as A.</li><li>If one is found, it becomes the second tip, flagged as <b>less reliable</b>. If not, nothing is invented: one tip is reported with the warning “tips merged”.</li><li>The same distance and height rules reject a second peak that is only noise or another echo, even when the peak search had found two.</li></ul>
@@ -291,7 +304,7 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 <text x="146" y="87.8" class="t-mut">exit of the band</text>
 <line x1="20" y1="170" x2="340" y2="170" stroke="var(--line)"/><text x="180" y="204" text-anchor="middle" class="t-mut">depth</text></svg><figcaption>Principle of the separation: a band below the top of the lobe, its exit points and the second peak (schematic).</figcaption></figure><figure><img src="images/step4_separation.png" alt="Separation of two close tips on data_1" loading="lazy" onerror="this.closest('figure').hidden=true"><figcaption>The same principle on the envelope of data_1.</figcaption></figure></div></article>
 
-<article class="step split flip rv" id="step-verify" data-sec="step-verify"><div><h3>5 · Verify</h3>
+<article class="step split flip rv" id="step-verify" data-sec="step-verify" data-view="step-verify"><div><h3>5 · Verify</h3>
 <p class="lead">The network could have shifted or smoothed an echo. The last step checks the result against the raw B-scan, without the network.</p>
 <h4>What the program does</h4>
 <ul class="facts"><li>For each depth of the search window, it <b>averages the Hilbert envelope of the raw signal over all A-scans</b>. The two tips show up as two intense horizontal bands of the B-scan.</li><li>Around each of the two strongest plausible peaks, it builds a <b>packet of 5 to 10 rows</b>, growing while the intensity stays above 50 % of the peak. If the packets touch, they are cut at the valley between the peaks.</li><li>The position of a tip is the <b>centre of mass</b> of its packet.</li><li>Each tip of the pipeline is compared with its packet: within <b>5 samples</b> the result is declared correct; otherwise it is replaced by the packet centre and the height is recomputed.</li><li>If the raw B-scan shows <b>a single lobe</b>, it cannot judge each tip separately: nothing is corrected, and a warning is printed when a tip lies outside the lobe.</li></ul>
@@ -304,7 +317,7 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 <div class="pane figs"><figure><img src="images/step5_verification.png" alt="Row intensity profile of the raw B-scan with the two packets and the tips" loading="lazy" onerror="this.closest('figure').hidden=true"><figcaption>data_1: intensity of each row of the raw B-scan, the two packets, and the tips of the pipeline compared with the centre of each packet.</figcaption></figure></div></article>
 </div></section>
 
-<section id="principe" data-sec="principe" style="padding-top:0"><div class="wrap split">
+<section id="principe" data-sec="principe" data-view="principe"><div class="wrap split">
 <div class="rv"><h2>How TOFD works</h2><p>Two ultrasonic probes are placed on either side of a weld: one transmits, the other receives.</p><p>Both tips of a defect diffract the wave and each sends back an echo, between the lateral wave and the back-wall echo. Their arrival time gives the depth of each tip, hence the height of the defect.</p></div>
 <div class="pane rv"><svg viewBox="0 0 360 220" role="img" aria-label="Diagram: transmitting probe, receiving probe and defect">
 <rect x="20" y="50" width="320" height="140" rx="10" class="plate"/><rect x="70" y="30" width="34" height="20" rx="4" class="probe"/><text x="87" y="22" text-anchor="middle">transmitter</text><rect x="256" y="30" width="34" height="20" rx="4" class="probe"/><text x="273" y="22" text-anchor="middle">receiver</text>
@@ -312,7 +325,7 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 <text x="190" y="90" class="t-top">upper tip</text><text x="190" y="152" class="t-bot">lower tip</text><text x="180" y="66" text-anchor="middle" class="t-mut">lateral wave</text><text x="180" y="208" text-anchor="middle" class="t-mut">back-wall echo</text></svg></div>
 </div></section>
 
-<section id="app" data-sec="app" style="background:#fff"><div class="wrap center rv"><h2>What the app does</h2><p>A Streamlit interface to test your own B-scans.</p></div>
+<section id="app" data-sec="app" data-view="app" style="background:#fff"><div class="wrap center rv"><h2>What the app does</h2><p>A Streamlit interface to test your own B-scans.</p></div>
 <div class="wrap"><div class="grid">
 <div class="card rv"><div class="ico">🎛️</div><h3>All the settings</h3><p>Clusters, iterations, prominence, separation, tolerance: every parameter is adjustable.</p></div>
 <div class="card rv"><div class="ico">📈</div><h3>Top and bottom tips</h3><p>Position of the selected A-scan and of both tips, with a warning if they merge.</p></div>
@@ -322,12 +335,12 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 <div class="card rv"><div class="ico">📂</div><h3>Your own data</h3><p>Upload a B-scan image, or run the simulated demo.</p></div>
 </div></div></section>
 
-<section id="limites" data-sec="limites"><div class="wrap"><div class="limits rv"><h2>What the tool does not claim to do</h2>
+<section id="limites" data-sec="limites" data-view="limites"><div class="wrap"><div class="limits rv"><h2>What the tool does not claim to do</h2>
 <p style="color:#6B5B1E;max-width:70ch">When the two tips are very close, their echoes merge in the envelope. The tool flags it (“tips merged”) instead of inventing a second peak, and the fallback detection requires a visual check.</p>
 <p style="color:#6B5B1E;max-width:70ch;margin:0">Idea under consideration: sparse deconvolution (matching pursuit) to separate overlapping echoes.</p></div></div></section>
 
 <!--NOUVELLE CATÉGORIE : Simulation. Deux onglets (A-scan / B-scan) ; le menu du haut ouvre directement le bon onglet. Les données sont celles de la démo du haut-->
-<section id="simulation" data-sec="simulation" style="background:#fff"><div class="wrap center rv"><h2>Simulation</h2><p>Look at the synthetic signal the demo is built on, either as a single A-scan or as a full B-scan.</p></div>
+<section id="simulation" data-sec="simulation" data-view="simulation" style="background:#fff"><div class="wrap center rv"><h2>Simulation</h2><p>Look at the synthetic signal the demo is built on, either as a single A-scan or as a full B-scan.</p></div>
 <div class="wrap rv" style="margin-top:40px"><div class="panel">
   <div class="tabs" role="tablist" aria-label="Signal type">
     <button type="button" role="tab" id="tabA" aria-controls="sim-ascan" aria-selected="false">A-scan</button>
@@ -340,7 +353,7 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 </div></div></section>
 
 <!--NOUVELLE CATÉGORIE : Denoising. Texte seulement pour l'instant ; ajoute plus tard une figure avant/après exportée depuis ton script Python-->
-<section id="denoising" data-sec="denoising"><div class="wrap center rv"><h2>B-scan denoising</h2><p>Step 2 of the pipeline, on its own: remove the noise without erasing the echoes you want to measure.</p></div>
+<section id="denoising" data-sec="denoising" data-view="denoising"><div class="wrap center rv"><h2>B-scan denoising</h2><p>Step 2 of the pipeline, on its own: remove the noise without erasing the echoes you want to measure.</p></div>
 <div class="wrap"><div class="grid">
 <div class="card rv"><div class="ico">🧩</div><h3>Group similar A-scans</h3><p>A k-means gathers A-scans that look alike, so each group has its own noise and echo profile.</p></div>
 <div class="card rv"><div class="ico">🧠</div><h3>One autoencoder per group</h3><p>Each network is trained on mini-batches of 5 A-scans and learns to rebuild the clean echo, not the noise.</p></div>
@@ -348,19 +361,19 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
 </div></div></section>
 
 <!--NOUVELLE CATÉGORIE : Animation. Le bouton Play fait défiler la sonde automatiquement le long du B-scan simulé-->
-<section id="animation" data-sec="animation" style="background:#fff"><div class="wrap center rv"><h2>B-scan animation</h2><p>Move the probe along the B-scan and watch the A-scan change. The ten previous A-scans stay in colour behind the current one.</p></div>
+<section id="animation" data-sec="animation" data-view="animation" style="background:#fff"><div class="wrap center rv"><h2>B-scan animation</h2><p>Move the probe along the B-scan and watch the A-scan change. The ten previous A-scans stay in colour behind the current one.</p></div>
 <div class="wrap rv" style="margin-top:40px"><div class="panel">
   <div class="viewer-grid"><canvas id="anB" width="720" height="480" tabindex="0" style="touch-action:pan-y;cursor:ew-resize" role="img" aria-label="B-scan viewer: click and drag, or use the left and right arrow keys, Home and End, to move the probe"></canvas><canvas id="anA" width="240" height="480" role="img" aria-label="A-scan at the selected column with the ten previous A-scans"></canvas></div>
   <div class="controls"><label>Column <output id="anOut">1/1</output></label><button type="button" class="btn" id="play" style="justify-self:start">Play</button></div>
   <p class="cap"><span id="anNote">Simulated B-scan.</span> Click and drag on the B-scan to move the probe, or click it and use the arrow keys, Home and End.</p>
 </div></div></section>
 
-<section data-sec="app" style="padding-top:0"><div class="wrap"><div class="final rv"><h2>Try it on a B-scan</h2><p>Without a file, the app uses a simulated B-scan so you can explore.</p><a class="btn light" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Open the app</a></div></div></section>
+<section data-sec="app" data-view="tip-extraction app" style="padding-top:72px"><div class="wrap"><div class="final rv"><h2>Try it on a B-scan</h2><p>Without a file, the app uses a simulated B-scan so you can explore.</p><a class="btn light" href="https://tofd-analysis.streamlit.app/" target="_blank" rel="noreferrer">Open the app</a></div></div></section>
 </main>
 <footer class="wrap"><span>STG2 project · <span id="year"></span> · Python, PyTorch, scikit-learn, SciPy, Streamlit</span><a href="https://github.com/cachaualix" target="_blank" rel="noreferrer">github.com/cachaualix</a></footer>
 
 <!--bouton flottant « View code » : son lien et le nom du fichier sont remplis par le script selon la section visible-->
-<a class="codebtn" id="codeBtn" href="#" target="_blank" rel="noreferrer">&lt;/&gt; View code <small id="codeName"></small></a>
+
 
 <script>(() => {
   // ============ À MODIFIER : liens vers ton code sur GitHub ============
@@ -766,15 +779,90 @@ code{font:600 .88em ui-monospace,Consolas,monospace;background:var(--bg);padding
   draw(); drawSim(); vDraw();
   document.getElementById("year").textContent = new Date().getFullYear();
 
-  // ---------- Bouton « View code » qui suit la section visible ----------
-  // IntersectionObserver prévient quand un élément data-sec traverse la ligne médiane de l'écran (rootMargin retire 45% en haut et en bas : il ne reste qu'une bande fine au milieu) ; on met alors à jour le lien et le nom du fichier
-  const codeBtn = document.getElementById("codeBtn"), codeName = document.getElementById("codeName");
-  const so = new IntersectionObserver(es => es.forEach(e => {
-    if (!e.isIntersecting) return;
-    const f = CODE[e.target.dataset.sec];
-    if (f) { codeBtn.href = REPO + f; codeName.textContent = f.split("/").pop(); codeBtn.classList.add("on"); }
-  }), { rootMargin: "-45% 0px -45% 0px" });
-  document.querySelectorAll("[data-sec]").forEach(el => so.observe(el));
+  // ---------- « Pages » dans le même onglet (routeur par l'adresse #…) ----------
+  // Chaque bloc de la page porte un attribut data-view = la « page » où il s'affiche (plusieurs pages possibles, séparées par des espaces). Quand l'adresse change (clic sur un lien #xxx, boutons précédent/suivant du navigateur), on cache tous les blocs qui ne sont pas de la page demandée. Sans JavaScript, tout reste affiché
+  const DEFAULT_VIEW = "tip-extraction";
+  const STEPS = ["step-cluster", "step-denoise", "step-envelope", "step-separate", "step-verify"];
+
+  // viewOf(id) : la page qui contient l'élément d'id donné (une section sans data-view prend la page de son premier bloc)
+  const viewOf = id => {
+    const el = id && document.getElementById(id);
+    if (!el) return DEFAULT_VIEW;
+    const h = el.matches("[data-view]") ? el : (el.closest("[data-view]") || el.querySelector("[data-view]"));
+    return h ? h.dataset.view.split(" ")[0] : DEFAULT_VIEW;
+  };
+
+  // Navigation entre étapes : fil d'Ariane en haut et boutons précédent / suivant en bas de chaque page d'étape
+  STEPS.forEach((id, i) => {
+    const art = document.getElementById(id); if (!art) return;
+    const title = k => document.querySelector("#" + k + " h3").textContent;
+    const prev = i ? ["#" + STEPS[i - 1], "← " + title(STEPS[i - 1])] : ["#methode", "← The 5 steps"];
+    const next = i < STEPS.length - 1 ? ["#" + STEPS[i + 1], title(STEPS[i + 1]) + " →"] : ["#methode", "Back to the 5 steps"];
+    const mk = (tag, cls, html) => { const e = document.createElement(tag); e.className = cls; e.dataset.view = id; e.innerHTML = html; return e; };
+    const link = ([href, text]) => { const a = document.createElement("a"); a.href = href; a.textContent = text; return a.outerHTML; };
+    art.before(mk("div", "crumb", link(["#methode", "← Method: the 5 steps"])));
+    art.after(mk("nav", "stepnav", link(prev) + link(next)));
+  });
+
+  // Accès au code : un bouton « View code » collé à chaque bloc (le premier élément de chaque data-sec, hors bandeau d'accueil). Il est en position absolue, au-dessus du bloc, donc visible dès que le bloc l'est
+  const seen = new Set();
+  document.querySelectorAll("[data-sec]").forEach(el => {
+    const k = el.dataset.sec, f = CODE[k];
+    if (!f || seen.has(k) || k === "tip-extraction") return;
+    seen.add(k);
+    const host = el.matches("section") ? (el.querySelector(".wrap") || el) : el;
+    host.classList.add("hasCode");
+    const a = document.createElement("a");
+    a.className = "codelink"; a.href = REPO + f; a.target = "_blank"; a.rel = "noreferrer";
+    a.innerHTML = "&lt;/&gt; View code <small></small>"; a.querySelector("small").textContent = f.split("/").pop();
+    host.appendChild(a);
+  });
+
+  // showView(v) : affiche la page v. Une section dont aucun bloc n'est visible est cachée aussi (sinon son espace vide resterait) ; la première section visible reçoit plus d'espace en haut quand il n'y a pas de bandeau sous le menu
+  const showView = v => {
+    document.querySelectorAll("[data-view]").forEach(e => { e.hidden = !e.dataset.view.split(" ").includes(v); });
+    let first = true;
+    document.querySelectorAll("main > section").forEach(sec => {
+      if (!sec.hasAttribute("data-view")) sec.hidden = ![...sec.querySelectorAll("[data-view]")].some(e => !e.hidden);
+      sec.classList.toggle("firstvis", !sec.hidden && first);
+      if (!sec.hidden) first = false;
+    });
+    document.body.classList.toggle("no-hero", v !== DEFAULT_VIEW);
+    // lien du menu « en cours » souligné : les pages de la méthode comptent pour Tip extraction
+    const group = (v === "methode" || v.startsWith("step-") || v === "principe" || v === "app" || v === "limites") ? "tip-extraction" : v;
+    document.querySelectorAll(".nav nav a").forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + group));
+  };
+
+  // place la page : en haut, sauf #donnees qui amène sur son bloc. Le navigateur essaie aussi de défiler lui-même vers un lien dès que sa cible devient visible : on remet donc la position une seconde fois à l'image suivante
+  const place = id => {
+    const go = () => {
+      const t = id === "donnees" ? document.getElementById(id) : null;
+      if (t) t.scrollIntoView({ behavior: "instant" }); else window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    };
+    go(); requestAnimationFrame(() => requestAnimationFrame(go));
+  };
+  const route = () => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    stopPlay();   // l'animation s'arrête quand on quitte sa page
+    showView(viewOf(id));
+    place(id);
+  };
+  // clic sur un lien interne (#methode, #step-cluster…) : on change de page nous-mêmes, sans le défilement automatique du navigateur
+  document.addEventListener("click", e => {
+    const a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    const h = a.getAttribute("href");
+    if (h !== "#" && !document.getElementById(h.slice(1))) return;
+    e.preventDefault(); a.blur();   // blur : ferme la bulle du menu après le clic
+    const url = h === "#" ? location.pathname + location.search : h;
+    if (h !== "#" ? location.hash !== h : location.hash !== "") history.pushState(null, "", url);
+    route();
+  });
+  // boutons précédent / suivant du navigateur, ou adresse modifiée à la main
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  window.addEventListener("popstate", route);
+  window.addEventListener("hashchange", route);
+  route();
 })();
 </script>
 <!--apparition au défilement : on ajoute la classe in aux éléments .rv quand 15% sont visibles-->
